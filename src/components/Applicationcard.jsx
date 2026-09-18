@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     AlertTriangle,
     CalendarCheck2,
     Check,
+    ChevronDown,
     ClipboardEdit,
     Circle,
+    Copy,
     CreditCard,
     Link2,
     LoaderCircle,
@@ -15,6 +17,8 @@ import {
     XCircle,
     ArrowRight,
     Settings,
+    Clock,
+    ExternalLink,
 } from "lucide-react";
 import { 
     createPaymentSession,
@@ -33,6 +37,7 @@ import {
     formatDateRange,
 } from "../lib/constants";
 
+// ── Payment labels ─────────────────────────────────────────────────────
 const PAYMENT_LABELS = {
     pending: "غير مدفوع",
     paid: "مدفوع",
@@ -40,6 +45,7 @@ const PAYMENT_LABELS = {
     refunded: "مسترد",
 };
 
+// ── State badge colors ─────────────────────────────────────────────────
 const STATE_BADGE = {
     draft: "bg-gray-50 text-gray-700 ring-gray-600/20",
     awaiting_service_payment: "bg-amber-50 text-amber-700 ring-amber-600/20",
@@ -62,6 +68,7 @@ const STATE_BADGE = {
     expired: "bg-red-50 text-red-700 ring-red-600/20",
 };
 
+// ── Tone style mapping ─────────────────────────────────────────────────
 const TONE_STYLES = {
     neutral: { border: "border-r-gray-400", bg: "bg-gray-50", iconBg: "bg-gray-200", iconText: "text-gray-600", text: "text-gray-900" },
     running: { border: "border-r-cyan-500", bg: "bg-cyan-50/50", iconBg: "bg-cyan-100", iconText: "text-cyan-700", text: "text-cyan-900" },
@@ -90,6 +97,7 @@ const hasReachedEligibility = (automation, state) => Boolean(automation.eligibil
         "rescheduled",
     ].includes(state);
 
+// ── Operational status resolver ────────────────────────────────────────
 const operationalStatus = ({
     state,
     automation,
@@ -166,7 +174,7 @@ const operationalStatus = ({
         return { tone: "running", title: "جارٍ التحقق من الأهلية", description: "أرسل البوت البيانات إلى Prometric.", next: "لا يلزم تدخل الآن." };
     }
     if (state === "ready") {
-        return { tone: "running", title: "الطلب جاهز לבدء Prometric", description: "تم دفع الخدمة وسيبدأ التحقق من الأهلية.", next: "لا يلزم تدخل الآن." };
+        return { tone: "running", title: "الطلب جاهز لبدء Prometric", description: "تم دفع الخدمة وسيبدأ التحقق من الأهلية.", next: "لا يلزم تدخل الآن." };
     }
     if (state === "manual_review") {
         return { tone: "warning", title: "الطلب يحتاج مراجعة يدوية", description: errorMessage || "توقفت خطوة سابقة ولم يستطع البوت استكمالها تلقائيًا.", next: "راجع بيانات الأهلية." };
@@ -186,10 +194,47 @@ const operationalStatus = ({
     return { tone: "neutral", title: STATE_LABELS[state] || "الطلب مسجل", description: "لم يبدأ التنفيذ التلقائي لهذا الطلب بعد.", next: "راجع دفع الخدمة وحالة الطلب." };
 };
 
+// ── CopyButton micro-interaction ───────────────────────────────────────
+function CopyButton({ text }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = useCallback(async () => {
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+        } catch {
+            // fallback silently
+        }
+    }, [text]);
+
+    if (!text) return null;
+
+    return (
+        <span className="relative inline-flex">
+            <button
+                onClick={handleCopy}
+                className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-0.5 rounded hover:bg-gray-200 text-gray-400 hover:text-ink"
+                aria-label="نسخ"
+            >
+                <Copy size={13} />
+            </button>
+            {copied && (
+                <span className="copy-tooltip absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg bg-ink text-cyan text-[10px] font-bold whitespace-nowrap shadow-lg z-10">
+                    تم النسخ!
+                </span>
+            )}
+        </span>
+    );
+}
+
+// ── Main Card ──────────────────────────────────────────────────────────
 export default function Applicationcard({ application, currentTime }) {
     const queryClient = useQueryClient();
     const [showConfirmForm, setShowConfirmForm] = useState(false);
     const [adminOptionsOpen, setAdminOptionsOpen] = useState(false);
+    const [timelineOpen, setTimelineOpen] = useState(false);
     const [selectedTransitionState, setSelectedTransitionState] = useState("");
     const [confirmFields, setConfirmFields] = useState({ confirmationNumber: "", appointmentId: "", scheduledAt: "", siteId: "" });
     const automation = application.automation || {};
@@ -216,31 +261,36 @@ export default function Applicationcard({ application, currentTime }) {
         ? API_ERROR_MESSAGES[errorCode] || automation.lastError.message
         : automation.lastError?.message || null;
 
+    // ── Mutations ───────────────────────────────────────────────────
+    const invalidateAll = () => {
+        queryClient.invalidateQueries({ queryKey: ["applications"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-summary"] });
+    };
+
     const paymentSession = useMutation({
         mutationFn: () => createPaymentSession(application._id),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["applications"] }); queryClient.invalidateQueries({ queryKey: ["admin-summary"] }); },
+        onSuccess: invalidateAll,
     });
 
     const eligibilityCheck = useMutation({
         mutationFn: () => triggerEligibilityCheck(application._id),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["applications"] }); queryClient.invalidateQueries({ queryKey: ["summary"] }); },
+        onSuccess: invalidateAll,
     });
 
     const searchRestart = useMutation({
         mutationFn: () => restartSearch(application._id),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["applications"] }); queryClient.invalidateQueries({ queryKey: ["summary"] }); },
+        onSuccess: invalidateAll,
     });
 
     const appCancel = useMutation({
         mutationFn: () => cancelApplication(application._id),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["applications"] }); queryClient.invalidateQueries({ queryKey: ["admin-summary"] }); },
+        onSuccess: invalidateAll,
     });
 
     const manualConfirm = useMutation({
         mutationFn: (body) => confirmBooking(application._id, body),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["applications"] });
-            queryClient.invalidateQueries({ queryKey: ["admin-summary"] });
+            invalidateAll();
             setShowConfirmForm(false);
             setConfirmFields({ confirmationNumber: "", appointmentId: "", scheduledAt: "", siteId: "" });
         },
@@ -248,14 +298,15 @@ export default function Applicationcard({ application, currentTime }) {
 
     const forceTransition = useMutation({
         mutationFn: (targetState) => forceTransitionState(application._id, targetState),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["applications"] }); queryClient.invalidateQueries({ queryKey: ["admin-summary"] }); },
+        onSuccess: invalidateAll,
     });
 
     const payStatus = useMutation({
         mutationFn: (targetStatus) => updatePaymentStatus(application._id, targetStatus),
-        onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["applications"] }); queryClient.invalidateQueries({ queryKey: ["admin-summary"] }); },
+        onSuccess: invalidateAll,
     });
 
+    // ── Derived display state ───────────────────────────────────────
     const status = operationalStatus({ state, automation, hasActiveLink, checkoutExpired, selectedSlotPassed, errorMessage });
     const theme = TONE_STYLES[status.tone] || TONE_STYLES.neutral;
     const badgeClass = STATE_BADGE[state] || STATE_BADGE.draft;
@@ -279,26 +330,50 @@ export default function Applicationcard({ application, currentTime }) {
     const orderNumber = application.externalOrder?.orderId;
     const cities = application.preferredCities?.map((city) => city.name).filter(Boolean) || [];
 
+    // ── Audit trail events ──────────────────────────────────────────
+    const timelineEvents = [
+        application.createdAt && { label: "تم إنشاء الطلب", time: application.createdAt, done: true },
+        application.paymentStatus === "paid" && { label: "تم دفع الخدمة", time: application.updatedAt, done: true },
+        eligibilityDone && { label: "تم فحص الأحقية", time: automation.lastCheckedAt || application.updatedAt, done: true },
+        centersDone && availableSitesCount > 0 && { label: `تم العثور على ${availableSitesCount} مركز`, time: application.updatedAt, done: true },
+        slotDone && { label: `اختيار موعد: ${selected.siteName || "—"}`, time: application.updatedAt, done: true },
+        hasActiveLink && { label: "تم إنشاء رابط الدفع", time: application.updatedAt, done: true },
+        confirmationDone && { label: `تأكيد الحجز: ${appointment.confirmationNumber || "—"}`, time: appointment.scheduledAt || application.updatedAt, done: true },
+    ].filter(Boolean);
+
+    // ── Shared action button style ──────────────────────────────────
+    const actionBtn = "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none";
+
     return (
         <article className={`flex flex-col gap-6 p-7 bg-white border border-gray-200 shadow-sm rounded-3xl border-r-[6px] transition-all duration-300 hover:shadow-md ${theme.border}`}>
             
-            {/* Header */}
+            {/* ── Header ────────────────────────────────────────────── */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-5">
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 group">
                     <div className="flex flex-wrap items-center gap-2">
                         {application.examCode && <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-extrabold">{application.examCode}</span>}
                         {orderNumber && <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-extrabold">سلة #{orderNumber}</span>}
                         <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-extrabold">{application.bookingType === "reschedule" ? "إعادة جدولة" : "حجز جديد"}</span>
                     </div>
-                    <h3 className="text-xl font-bold text-ink m-0 leading-tight">{application.fullName} <span className="text-gray-400 font-normal">—</span> {application.examId?.title || application.examCode}</h3>
-                    <p className="text-sm text-gray-500 m-0">{application.email} <span className="mx-2">·</span> <code className="font-mono text-xs text-gray-400">{application._id}</code></p>
+                    <h3 className="text-xl font-bold text-ink m-0 leading-tight flex items-center gap-1.5 flex-wrap">
+                        {application.fullName}
+                        <CopyButton text={application.fullName} />
+                        <span className="text-gray-400 font-normal">—</span>
+                        {application.examId?.title || application.examCode}
+                    </h3>
+                    <p className="text-sm text-gray-500 m-0 flex items-center gap-1.5 flex-wrap">
+                        {application.email}
+                        <span className="mx-1 text-gray-300">·</span>
+                        <code className="font-mono text-xs text-gray-400">{application._id}</code>
+                        <CopyButton text={application._id} />
+                    </p>
                 </div>
                 <span className={`px-4 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap ring-1 ring-inset ${badgeClass}`}>
                     {STATE_LABELS[state] || state}
                 </span>
             </div>
 
-            {/* Operational Summary */}
+            {/* ── Operational Summary ───────────────────────────────── */}
             <section className={`flex items-start gap-4 p-5 rounded-2xl border ${theme.bg} ${theme.border.replace('border-r-', 'border-')}`}>
                 <div className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-xl ${theme.iconBg} ${theme.iconText}`}>
                     {status.tone === "error" || status.tone === "warning" ? <AlertTriangle size={20} /> :
@@ -313,10 +388,10 @@ export default function Applicationcard({ application, currentTime }) {
                 </div>
             </section>
 
-            {/* Workflow Progress */}
+            {/* ── Workflow Progress ─────────────────────────────────── */}
             <section className="flex flex-col gap-4 p-5 border border-gray-200 rounded-2xl">
                 <div className="flex items-center justify-between text-xs font-semibold text-gray-500">
-                    <span className="uppercase tracking-wide">مسار التنفيذ</span>
+                    <span className="tracking-wide">مسار التنفيذ</span>
                     <span>{workflowSteps.filter(s => s.done).length} من {workflowSteps.length}</span>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
@@ -344,7 +419,7 @@ export default function Applicationcard({ application, currentTime }) {
                 </div>
             </section>
 
-            {/* Facts Grid */}
+            {/* ── Facts Grid ───────────────────────────────────────── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">دفع الخدمة<strong className="text-ink text-sm">{PAYMENT_LABELS[application.paymentStatus] || application.paymentStatus}</strong></div>
                 <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">المراكز المتاحة<strong className="text-ink text-sm">{availableSitesCount}</strong></div>
@@ -355,7 +430,7 @@ export default function Applicationcard({ application, currentTime }) {
                 {application.updatedAt && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">آخر تحديث<strong className="text-ink text-sm">{formatDate(application.updatedAt)}</strong></div>}
             </div>
 
-            {/* Selected Slot info */}
+            {/* ── Selected Slot info ───────────────────────────────── */}
             {(selected.startsAt || selected.siteName) && (
                 <section className="flex flex-col gap-3 p-5 rounded-2xl bg-cyan-50/50 border border-cyan-100">
                     <strong className="text-sm text-cyan-900">الموعد المبدئي الذي اختاره البوت</strong>
@@ -367,18 +442,21 @@ export default function Applicationcard({ application, currentTime }) {
                 </section>
             )}
 
-            {/* Confirmed Appointment */}
+            {/* ── Confirmed Appointment ────────────────────────────── */}
             {appointment.confirmationNumber && (
-                <section className="flex flex-col md:flex-row items-start md:items-center gap-4 p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800">
+                <section className="flex flex-col md:flex-row items-start md:items-center gap-4 p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 group">
                     <strong className="text-sm flex-shrink-0">تم تأكيد الحجز</strong>
                     <div className="flex flex-wrap gap-6 text-sm">
-                        <span>رقم التأكيد: <b className="font-bold text-emerald-900">{appointment.confirmationNumber}</b></span>
+                        <span className="flex items-center gap-1.5">
+                            رقم التأكيد: <b className="font-bold text-emerald-900">{appointment.confirmationNumber}</b>
+                            <CopyButton text={appointment.confirmationNumber} />
+                        </span>
                         {appointment.scheduledAt && <span>الموعد: <b className="font-bold text-emerald-900">{formatDate(appointment.scheduledAt)}</b></span>}
                     </div>
                 </section>
             )}
 
-            {/* Payment Action */}
+            {/* ── Payment Action ───────────────────────────────────── */}
             {!selectedSlotPassed && (hasActiveLink || checkoutExpired || showPaymentButton) && (
                 <section className={`flex flex-col md:flex-row items-center justify-between gap-5 p-5 rounded-2xl border ${hasActiveLink ? "bg-indigo-50 border-indigo-200" : "bg-amber-50 border-amber-200"}`}>
                     <div className="flex flex-col gap-1 w-full">
@@ -391,59 +469,101 @@ export default function Applicationcard({ application, currentTime }) {
                         </p>
                     </div>
                     {hasActiveLink ? (
-                        <a href={checkoutUrl} target="_blank" rel="noopener noreferrer" className="w-full md:w-auto text-center px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover-scale whitespace-nowrap">
-                            فتح الدفع ↗
+                        <a
+                            href={checkoutUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full md:w-auto text-center inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover-scale whitespace-nowrap"
+                        >
+                            فتح الدفع
+                            <ExternalLink size={14} />
                         </a>
                     ) : showPaymentButton && (
                         <button 
                             disabled={paymentSession.isPending} 
                             onClick={() => paymentSession.mutate()}
-                            className="w-full md:w-auto px-6 py-2.5 rounded-xl bg-orange text-white font-bold text-sm hover-scale disabled:opacity-50 whitespace-nowrap"
+                            className="w-full md:w-auto px-6 py-2.5 rounded-xl bg-orange text-white font-bold text-sm hover-scale disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none whitespace-nowrap"
                         >
-                            {paymentSession.isPending ? "جارٍ الإنشاء…" : checkoutExpired ? "تجديد الرابط" : "إنشاء رابط الدفع"}
+                            {paymentSession.isPending ? <span className="flex items-center gap-2"><LoaderCircle size={14} className="animate-spin" /> جارٍ الإنشاء…</span> : checkoutExpired ? "تجديد الرابط" : "إنشاء رابط الدفع"}
                         </button>
                     )}
                 </section>
             )}
 
-            {/* Admin Toolbar */}
+            {/* ── Collapsible Audit Trail ──────────────────────────── */}
+            {timelineEvents.length > 1 && (
+                <>
+                    <button
+                        onClick={() => setTimelineOpen((v) => !v)}
+                        className="flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-ink transition-colors self-start"
+                    >
+                        <Clock size={14} />
+                        {timelineOpen ? "إخفاء السجل" : "سجل التنفيذ"}
+                        <ChevronDown size={14} className={`transition-transform duration-300 ${timelineOpen ? "rotate-180" : ""}`} />
+                    </button>
+                    <div className={`grid-expand ${timelineOpen ? "open" : ""}`}>
+                        <div className="grid-expand-inner">
+                            <section className="pr-3 pt-1 pb-2">
+                                <div className="relative border-r-2 border-gray-200 pr-6 flex flex-col gap-0">
+                                    {timelineEvents.map((event, i) => (
+                                        <div key={i} className="relative flex items-start gap-3 pb-5 last:pb-0">
+                                            {/* Dot on the vertical line */}
+                                            <span className={`absolute -right-[9px] top-0.5 w-4 h-4 rounded-full border-2 shrink-0 ${
+                                                event.done ? "bg-emerald-500 border-emerald-500" : "bg-white border-gray-300"
+                                            }`}>
+                                                {event.done && <Check size={10} className="text-white absolute top-0.5 right-0.5" strokeWidth={3} />}
+                                            </span>
+                                            <div className="flex flex-col gap-0.5 min-w-0">
+                                                <span className="text-xs font-bold text-ink">{event.label}</span>
+                                                <span className="text-[11px] text-gray-400 font-semibold">{formatDate(event.time)}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* ── Admin Toolbar ────────────────────────────────────── */}
             <section className="flex flex-wrap gap-3 pt-5 border-t border-dashed border-gray-200 mt-2">
                 {["ready", "manual_review"].includes(state) && (
-                    <button disabled={eligibilityCheck.isPending} onClick={() => eligibilityCheck.mutate()} className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-ink transition-colors disabled:opacity-50">
+                    <button disabled={eligibilityCheck.isPending} onClick={() => eligibilityCheck.mutate()} className={`${actionBtn} bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-ink`}>
                         {eligibilityCheck.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <ShieldCheck size={16} />} فحص الأحقية
                     </button>
                 )}
                 
                 {["failed", "expired", "manual_review"].includes(state) && (
-                    <button disabled={searchRestart.isPending} onClick={() => searchRestart.mutate()} className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-ink transition-colors disabled:opacity-50">
+                    <button disabled={searchRestart.isPending} onClick={() => searchRestart.mutate()} className={`${actionBtn} bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-ink`}>
                         {searchRestart.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <RefreshCw size={16} />} إعادة البحث
                     </button>
                 )}
 
                 {["manual_review", "failed"].includes(state) && (
-                    <button disabled={forceTransition.isPending} onClick={() => forceTransition.mutate("ready")} className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-ink transition-colors disabled:opacity-50">
+                    <button disabled={forceTransition.isPending} onClick={() => forceTransition.mutate("ready")} className={`${actionBtn} bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-ink`}>
                         {forceTransition.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <ArrowRight size={16} />} إرجاع إلى جاهز
                     </button>
                 )}
 
                 {state === "manual_review" && (
-                    <button onClick={() => setShowConfirmForm((v) => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-colors ${showConfirmForm ? "bg-orange/10 text-orange-dark" : "bg-gray-50 text-gray-700 hover:bg-gray-100"}`}>
+                    <button onClick={() => setShowConfirmForm((v) => !v)} className={`${actionBtn} ${showConfirmForm ? "bg-orange/10 text-orange-dark" : "bg-gray-50 text-gray-700 hover:bg-gray-100"}`}>
                         <ClipboardEdit size={16} /> {showConfirmForm ? "إغلاق النموذج" : "تأكيد يدوي"}
                     </button>
                 )}
 
-                <button onClick={() => setAdminOptionsOpen((v) => !v)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-colors ${adminOptionsOpen ? "bg-cyan-50 text-cyan-700" : "bg-gray-50 text-gray-700 hover:bg-gray-100"}`}>
+                <button onClick={() => setAdminOptionsOpen((v) => !v)} className={`${actionBtn} ${adminOptionsOpen ? "bg-cyan-50 text-cyan-700" : "bg-gray-50 text-gray-700 hover:bg-gray-100"}`}>
                     <Settings size={16} /> خيارات متقدمة
                 </button>
 
                 {!["cancelled", "confirmed", "rescheduled", "failed"].includes(state) && (
-                    <button disabled={appCancel.isPending} onClick={() => window.confirm("إلغاء الطلب نهائياً؟") && appCancel.mutate()} className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-red-50 text-red-600 hover:bg-red-100 transition-colors ml-auto disabled:opacity-50">
+                    <button disabled={appCancel.isPending} onClick={() => window.confirm("إلغاء الطلب نهائياً؟") && appCancel.mutate()} className={`${actionBtn} bg-red-50 text-red-600 hover:bg-red-100 mr-auto`}>
                         {appCancel.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <XCircle size={16} />} إلغاء الطلب
                     </button>
                 )}
             </section>
 
-            {/* Zero-CLS Manual Confirm Form */}
+            {/* ── Manual Confirm Form (Zero-CLS) ──────────────────── */}
             <div className={`grid-expand ${showConfirmForm && state === "manual_review" ? "open" : ""}`}>
                 <div className="grid-expand-inner">
                     <section className="mt-4 p-6 rounded-2xl bg-orange/5 border border-orange/20 flex flex-col gap-5">
@@ -475,16 +595,16 @@ export default function Applicationcard({ application, currentTime }) {
                                     if (confirmFields.siteId.trim()) body.siteId = confirmFields.siteId.trim();
                                     manualConfirm.mutate(body);
                                 }}
-                                className="px-6 py-2.5 rounded-xl bg-orange text-white font-bold text-sm hover-scale disabled:opacity-50"
+                                className="px-6 py-2.5 rounded-xl bg-orange text-white font-bold text-sm hover-scale disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
                             >
-                                {manualConfirm.isPending ? "جارٍ التأكيد…" : "تأكيد الحجز"}
+                                {manualConfirm.isPending ? <span className="flex items-center gap-2"><LoaderCircle size={14} className="animate-spin" /> جارٍ التأكيد…</span> : "تأكيد الحجز"}
                             </button>
                         </div>
                     </section>
                 </div>
             </div>
 
-            {/* Zero-CLS Advanced Admin Options Form */}
+            {/* ── Advanced Admin Options (Zero-CLS) ────────────────── */}
             <div className={`grid-expand ${adminOptionsOpen ? "open" : ""}`}>
                 <div className="grid-expand-inner">
                     <section className="mt-4 p-5 rounded-2xl bg-cyan-50/50 border border-cyan-100 flex flex-col gap-5">
@@ -497,9 +617,9 @@ export default function Applicationcard({ application, currentTime }) {
                                 <button 
                                     disabled={payStatus.isPending} 
                                     onClick={() => window.confirm("هل أنت متأكد من تغيير الدفع إلى 'مدفوع' يدويًا؟") && payStatus.mutate("paid")} 
-                                    className="w-fit px-4 py-2.5 rounded-xl text-xs font-bold bg-white border border-gray-200 text-gray-800 hover:border-emerald-500 hover:text-emerald-700 hover-scale transition-all"
+                                    className="w-fit px-4 py-2.5 rounded-xl text-xs font-bold bg-white border border-gray-200 text-gray-800 hover:border-emerald-500 hover:text-emerald-700 hover-scale transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
                                 >
-                                    تأكيد الدفع يدويًا
+                                    {payStatus.isPending ? <span className="flex items-center gap-2"><LoaderCircle size={14} className="animate-spin" /> جارٍ التحديث…</span> : "تأكيد الدفع يدويًا"}
                                 </button>
                             </div>
                         )}
@@ -521,9 +641,9 @@ export default function Applicationcard({ application, currentTime }) {
                                 <button 
                                     disabled={forceTransition.isPending || !selectedTransitionState || selectedTransitionState === state}
                                     onClick={() => window.confirm(`تغيير الحالة إلى ${STATE_LABELS[selectedTransitionState]}؟`) && forceTransition.mutate(selectedTransitionState)}
-                                    className="px-5 py-2.5 rounded-xl text-xs font-bold bg-cyan-600 text-white hover:bg-cyan-700 hover-scale disabled:opacity-50 transition-all"
+                                    className="px-5 py-2.5 rounded-xl text-xs font-bold bg-cyan-600 text-white hover:bg-cyan-700 hover-scale disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none transition-all"
                                 >
-                                    {forceTransition.isPending ? "جارٍ التغيير…" : "تنفيذ التغيير"}
+                                    {forceTransition.isPending ? <span className="flex items-center gap-2"><LoaderCircle size={14} className="animate-spin" /> جارٍ التغيير…</span> : "تنفيذ التغيير"}
                                 </button>
                             </div>
                         </div>

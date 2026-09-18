@@ -89,6 +89,14 @@ export const ACTIVE_AUTOMATION_STATES = [
   "awaiting_admin_slot_selection",
 ];
 
+export const STATE_FILTER_GROUPS = [
+  { key: "all",       label: "الكل",          icon: "grid",    states: [] },
+  { key: "attention", label: "بحاجة لتدخل",   icon: "alert",   states: ["manual_review", "manual_payment_required", "awaiting_service_payment"] },
+  { key: "active",    label: "قيد المعالجة",   icon: "loader",  states: ["ready", "validating_eligibility", "eligibility_verified", "searching", "reschedule_searching", "awaiting_admin_slot_lookup", "fetching_slots", "awaiting_admin_slot_selection", "slot_selected", "booking"] },
+  { key: "done",      label: "مكتملة",         icon: "check",   states: ["confirmed", "rescheduled"] },
+  { key: "stopped",   label: "متوقفة",         icon: "x",       states: ["failed", "cancelled", "expired"] },
+];
+
 export const formatDate = (value) =>
   value
     ? new Intl.DateTimeFormat("ar-SA", { dateStyle: "medium", timeStyle: "short" }).format(

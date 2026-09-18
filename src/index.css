@@ -42,4 +42,85 @@
     box-shadow: 0 0 0 3px currentColor;
     opacity: 0.2;
   }
+
+  /* ── Live system status ping ──────────────────────────────────────── */
+  .status-pulse {
+    position: relative;
+  }
+  .status-pulse::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: inherit;
+    animation: status-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  @keyframes status-ping {
+    0% { transform: scale(1); opacity: 0.6; }
+    75%, 100% { transform: scale(2.2); opacity: 0; }
+  }
+
+  /* ── Skeleton shimmer for zero-CLS loading ────────────────────────── */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: #e8ecea;
+    border-radius: 12px;
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.45) 50%,
+      transparent 100%
+    );
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    100% { transform: translateX(100%); }
+  }
+
+  /* ── Copy tooltip ─────────────────────────────────────────────────── */
+  .copy-tooltip {
+    animation: tooltip-pop 200ms ease-out forwards;
+  }
+  @keyframes tooltip-pop {
+    from { opacity: 0; transform: translateY(4px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── Quick-filter tab scroll (mobile) ─────────────────────────────── */
+  .filter-tabs {
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;          /* Firefox */
+  }
+  .filter-tabs::-webkit-scrollbar {
+    display: none;                  /* Chrome/Safari */
+  }
+  .filter-tab {
+    scroll-snap-align: start;
+  }
+
+  /* ── Keyboard shortcut badge ──────────────────────────────────────── */
+  .kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    padding: 1px 5px;
+    font-family: "Cairo", system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.4;
+    color: #6b7280;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 5px;
+    box-shadow: 0 1px 0 #d1d5db;
+  }
 }

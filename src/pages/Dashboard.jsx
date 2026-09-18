@@ -1,14 +1,29 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { RefreshCw, Filter, Inbox, LoaderCircle } from "lucide-react";
+import {
+  RefreshCw,
+  Inbox,
+  LoaderCircle,
+  SearchX,
+  LayoutGrid,
+  AlertTriangle,
+  CircleCheck,
+  XCircle,
+} from "lucide-react";
 import { getMe } from "../api/auth";
 import { getAllApplications, getAdminSummary } from "../api/applications";
 import { clearToken } from "../lib/auth";
-import { ACTIVE_AUTOMATION_STATES, RETRYABLE_SEARCH_CODES, STATE_LABELS } from "../lib/constants";
+import {
+  ACTIVE_AUTOMATION_STATES,
+  RETRYABLE_SEARCH_CODES,
+  STATE_LABELS,
+  STATE_FILTER_GROUPS,
+} from "../lib/constants";
 import Applicationcard from "../components/Applicationcard";
 import AdminHeader from "../components/AdminHeader";
 
+// ── Helpers ────────────────────────────────────────────────────────────
 const isRunning = (app) => {
   const automation = app.automation || {};
   if (automation.lastError?.code && !RETRYABLE_SEARCH_CODES.includes(automation.lastError.code)) return false;
@@ -23,11 +38,82 @@ const pollWhileActive = (query) => {
   return false;
 };
 
+const FILTER_TAB_ICONS = {
+  grid: LayoutGrid,
+  alert: AlertTriangle,
+  loader: LoaderCircle,
+  check: CircleCheck,
+  x: XCircle,
+};
+
+// ── Skeleton Card ──────────────────────────────────────────────────────
+function SkeletonCard() {
+  return (
+    <div className="flex flex-col gap-6 p-7 bg-white border border-gray-200 rounded-3xl border-r-[6px] border-r-gray-200">
+      {/* Header skeleton */}
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-5">
+        <div className="flex flex-col gap-3 flex-1">
+          <div className="flex gap-2">
+            <div className="skeleton h-6 w-20 rounded-full" />
+            <div className="skeleton h-6 w-24 rounded-full" />
+          </div>
+          <div className="skeleton h-6 w-72 max-w-full" />
+          <div className="skeleton h-4 w-56 max-w-full" />
+        </div>
+        <div className="skeleton h-7 w-28 rounded-full" />
+      </div>
+      {/* Status skeleton */}
+      <div className="flex items-start gap-4 p-5 rounded-2xl bg-gray-50 border border-gray-100">
+        <div className="skeleton h-11 w-11 rounded-xl shrink-0" />
+        <div className="flex flex-col gap-2 flex-1">
+          <div className="skeleton h-4 w-48 max-w-full" />
+          <div className="skeleton h-3 w-64 max-w-full" />
+        </div>
+      </div>
+      {/* Workflow skeleton */}
+      <div className="flex flex-col gap-4 p-5 border border-gray-100 rounded-2xl">
+        <div className="flex justify-between">
+          <div className="skeleton h-3 w-24" />
+          <div className="skeleton h-3 w-14" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex flex-col items-center gap-2 p-3 rounded-xl bg-gray-50">
+              <div className="skeleton h-7 w-7 rounded-full" />
+              <div className="skeleton h-3 w-12" />
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Facts skeleton */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex flex-col gap-2 p-3.5 rounded-xl bg-gray-50">
+            <div className="skeleton h-3 w-16" />
+            <div className="skeleton h-5 w-12" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SkeletonStat() {
+  return (
+    <div className="flex flex-col justify-center bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+      <div className="skeleton h-8 w-12 mb-2" />
+      <div className="skeleton h-3 w-20" />
+    </div>
+  );
+}
+
+// ── Main Dashboard ─────────────────────────────────────────────────────
 export default function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [stateFilter, setStateFilter] = useState("");
+  const [activeFilterKey, setActiveFilterKey] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: user } = useQuery({ queryKey: ["me"], queryFn: getMe });
 
@@ -51,6 +137,7 @@ export default function Dashboard() {
     refetchInterval: 30000,
   });
 
+  // ── Derived data ──────────────────────────────────────────────────
   const stats = [
     ["أحقية صحيحة", applications.filter((app) => Boolean(app.automation?.eligibilityId)).length],
     ["البوت يعمل الآن", applications.filter(isRunning).length],
@@ -67,80 +154,181 @@ export default function Dashboard() {
     ["ملغي", summary.cancelled || 0],
   ];
 
-  const visible = stateFilter ? applications.filter((app) => app.automation?.state === stateFilter) : applications;
+  // ── Search + filter logic ─────────────────────────────────────────
+  const visible = useMemo(() => {
+    let filtered = applications;
+
+    // Group filter
+    const group = STATE_FILTER_GROUPS.find((g) => g.key === activeFilterKey);
+    if (group && group.states.length > 0) {
+      filtered = filtered.filter((app) => group.states.includes(app.automation?.state));
+    }
+
+    // Search filter
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      filtered = filtered.filter((app) => {
+        const haystack = [
+          app.fullName,
+          app.email,
+          app._id,
+          app.automation?.eligibilityId,
+          app.currentAppointment?.confirmationNumber,
+          app.examCode,
+          app.examId?.title,
+          ...(app.preferredCities?.map((c) => c.name) || []),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(q);
+      });
+    }
+
+    return filtered;
+  }, [applications, activeFilterKey, searchQuery]);
+
+  // ── Filter tab counts ─────────────────────────────────────────────
+  const groupCounts = useMemo(() => {
+    const counts = {};
+    for (const group of STATE_FILTER_GROUPS) {
+      if (group.states.length === 0) {
+        counts[group.key] = applications.length;
+      } else {
+        counts[group.key] = applications.filter((app) =>
+          group.states.includes(app.automation?.state)
+        ).length;
+      }
+    }
+    return counts;
+  }, [applications]);
+
+  const clearFilters = () => {
+    setActiveFilterKey("all");
+    setSearchQuery("");
+  };
+
+  const hasActiveFilters = activeFilterKey !== "all" || searchQuery.trim() !== "";
 
   return (
     <div className="min-h-screen bg-paper pb-20 px-4 md:px-8">
-      <AdminHeader user={user} />
+      <AdminHeader user={user} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
       <main className="max-w-7xl mx-auto mt-8 flex flex-col gap-8">
         
-        {/* Header & Controls */}
+        {/* ── Header & Refresh ──────────────────────────────────────── */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 border-b border-gray-200 pb-5">
           <div className="flex flex-col gap-1">
             <h1 className="text-3xl font-extrabold text-ink tracking-tight m-0">لوحة إدارة الحجوزات</h1>
             <p className="text-gray-500 m-0">مراقبة ومعالجة جميع طلبات Khaleeji Bot</p>
           </div>
-          <div className="flex items-center gap-3">
-            <label className="relative flex items-center bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-sm focus-within:ring-4 focus-within:ring-cyan/10 focus-within:border-cyan transition-all">
-              <Filter size={16} className="text-gray-400 ml-2" />
-              <select 
-                value={stateFilter} 
-                onChange={(e) => setStateFilter(e.target.value)}
-                className="bg-transparent border-none text-sm font-bold text-ink outline-none cursor-pointer pr-1"
-                dir="rtl"
-              >
-                <option value="">كل الطلبات</option>
-                {Object.entries(STATE_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
-              </select>
-            </label>
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-ink font-bold shadow-sm hover:bg-gray-50 transition-all hover-scale disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
+            تحديث
+          </button>
+        </div>
 
-            <button
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-ink font-bold shadow-sm hover:bg-gray-50 transition-all hover-scale disabled:opacity-50"
-            >
-              <RefreshCw size={16} className={isFetching ? "animate-spin" : ""} />
-              تحديث
-            </button>
+        {/* ── Stats Grid (with skeleton) ────────────────────────────── */}
+        {isLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonStat key={i} />
+            ))}
           </div>
+        ) : (
+          <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 transition-opacity duration-300 ${isFetchingSummary ? "opacity-50" : "opacity-100"}`}>
+            {stats.map(([label, count]) => (
+              <article key={label} className="flex flex-col justify-center bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover-scale hover:border-cyan-100 transition-all">
+                <strong className="text-3xl font-extrabold text-ink leading-none mb-2">{count}</strong>
+                <span className="text-xs font-bold text-gray-500">{label}</span>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {/* ── Quick Filter Tabs ─────────────────────────────────────── */}
+        <div className="flex overflow-x-auto filter-tabs gap-2 pb-1 -mb-1">
+          {STATE_FILTER_GROUPS.map((group) => {
+            const Icon = FILTER_TAB_ICONS[group.icon] || LayoutGrid;
+            const isActive = activeFilterKey === group.key;
+            const count = groupCounts[group.key] ?? 0;
+            return (
+              <button
+                key={group.key}
+                onClick={() => setActiveFilterKey(group.key)}
+                className={`filter-tab flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all shrink-0 ${
+                  isActive
+                    ? "bg-ink text-cyan shadow-md"
+                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-ink"
+                }`}
+              >
+                <Icon size={15} className={isActive ? "" : "opacity-60"} />
+                {group.label}
+                <span className={`tabular-nums text-xs font-extrabold px-1.5 py-0.5 rounded-md ${
+                  isActive ? "bg-cyan/20 text-cyan" : "bg-gray-100 text-gray-500"
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Stats Grid */}
-        <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 transition-opacity duration-300 ${isFetchingSummary ? "opacity-50" : "opacity-100"}`}>
-          {stats.map(([label, count]) => (
-            <article key={label} className="flex flex-col justify-center bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover-scale hover:border-cyan-100 transition-all">
-              <strong className="text-3xl font-extrabold text-ink leading-none mb-2">{count}</strong>
-              <span className="text-xs font-bold text-gray-500">{label}</span>
-            </article>
-          ))}
-        </div>
-
-        {/* Application List */}
+        {/* ── Application List ──────────────────────────────────────── */}
         <div className="flex flex-col gap-5 mt-2">
+
+          {/* Skeleton loading */}
           {isLoading && (
-            <div className="flex flex-col items-center justify-center p-16 bg-white border border-gray-200 rounded-3xl text-gray-400">
-              <LoaderCircle size={40} className="animate-spin mb-4 text-cyan" />
-              <p className="font-bold text-lg">جاري التحميل…</p>
-            </div>
+            <>
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </>
           )}
 
+          {/* Error state */}
           {isError && (
             <div className="flex flex-col items-center justify-center p-16 bg-red-50 border border-red-200 rounded-3xl text-red-600">
               <p className="font-bold text-lg">{error.friendlyMessage}</p>
             </div>
           )}
 
+          {/* Empty state */}
           {!isLoading && !isError && visible.length === 0 && (
-            <div className="flex flex-col items-center justify-center p-20 bg-white border border-dashed border-gray-300 rounded-3xl text-gray-400">
-              <Inbox size={48} className="mb-4 opacity-50" />
-              <p className="font-bold text-lg text-ink">لا توجد طلبات في هذا الطابور</p>
-              <p className="text-sm">لم يتم العثور على طلبات مطابقة للفلتر الحالي.</p>
+            <div className="flex flex-col items-center justify-center p-20 bg-white border border-dashed border-gray-300 rounded-3xl">
+              <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-6">
+                {hasActiveFilters ? (
+                  <SearchX size={36} className="text-gray-400" />
+                ) : (
+                  <Inbox size={36} className="text-gray-400" />
+                )}
+              </div>
+              <p className="font-bold text-lg text-ink mb-1">
+                {hasActiveFilters
+                  ? "لا توجد طلبات تطابق معايير البحث الحالية"
+                  : "لا توجد طلبات في هذا الطابور"}
+              </p>
+              <p className="text-sm text-gray-400 mb-6">
+                {hasActiveFilters
+                  ? "جرّب تغيير كلمة البحث أو اختيار تصنيف مختلف."
+                  : "لم يتم العثور على طلبات مطابقة للفلتر الحالي."}
+              </p>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-ink text-cyan font-bold text-sm hover-scale shadow-md"
+                >
+                  إعادة ضبط الفلاتر
+                </button>
+              )}
             </div>
           )}
 
+          {/* Application cards */}
           {!isLoading && !isError && visible.map((app) => (
             <div key={app._id} className="transition-all duration-300 transform-gpu animate-in fade-in slide-in-from-bottom-2">
                <Applicationcard application={app} currentTime={dataUpdatedAt} />
