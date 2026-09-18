@@ -1,16 +1,75 @@
-# React + Vite
+# 🤖 PRO-BOT V2
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
+![Vite](https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=Cloudflare&logoColor=white)
+![Render](https://img.shields.io/badge/Render-%46E3B7.svg?style=for-the-badge&logo=render&logoColor=white)
 
-Currently, two official plugins are available:
+PRO-BOT V2 is an advanced, automated booking and notification system tailored for scheduling, built with a modern React frontend and a powerful Express/Node.js backend. 
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🌐 Live URLs
+- **Frontend (Cloudflare Pages):** [https://pro-bot-v2-frontend.tech-rm-re.workers.dev/login](https://pro-bot-v2-frontend.tech-rm-re.workers.dev/login)
+- **Backend API (Render):** [https://pro-bot-backend.onrender.com/](https://pro-bot-backend.onrender.com/)
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Tech Stack
 
-## Expanding the ESLint configuration
+### Frontend
+- **Framework:** React 19 + Vite
+- **Styling:** Tailwind CSS 4
+- **State Management / Fetching:** TanStack React Query + Axios
+- **Routing:** React Router v7
+- **Icons:** Lucide React
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Backend (API)
+- **Runtime:** Node.js + Express.js
+- **Database:** MongoDB + Redis (for caching & job queues)
+- **Security:** Helmet, Express Rate Limit, CORS configurations
+
+---
+
+## 🚀 Features
+- **Secure Authentication:** JWT-based login with optimized session handling.
+- **Automated Workflows:** Background jobs integrated with Salla Webhooks and Prometric systems.
+- **Real-time Notifications:** Automated alerts and updates.
+- **Dashboard:** Modern, responsive UI for admin and user management.
+- **Optimized Performance:** Blazing fast rendering with Vite and React Query.
+
+---
+
+## 💻 Local Development Setup
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/redasalem/pro-bot-v2-frontend.git
+cd pro-bot-v2-frontend
+```
+
+### 2. Install Dependencies
+```bash
+npm install
+```
+
+### 3. Setup Environment Variables
+Create a `.env` file in the root directory and add the following:
+```env
+VITE_API_BASE_URL=https://pro-bot-backend.onrender.com/api/v1
+```
+
+### 4. Run the Development Server
+```bash
+npm run dev
+```
+
+### 5. Build for Production
+```bash
+npm run build
+```
+
+---
+
+## ☁️ Deployment
+
+The frontend is configured to automatically deploy to **Cloudflare Pages** on push to the `main` branch. Ensure that environment variables (like `VITE_API_BASE_URL`) are correctly set in the Cloudflare Dashboard before building.
