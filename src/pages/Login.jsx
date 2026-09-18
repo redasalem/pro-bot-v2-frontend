@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useMutation } from '@tanstack/react-query';
 import Toast from '../components/Toast';
 import { loginRequest } from './../api/auth';
-import { setToken } from '../lib/auth';
+import { setToken, isLoggedIn } from '../lib/auth';
 import { LogIn } from 'lucide-react';
 
 export default function Login() {
+  if (isLoggedIn()) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
