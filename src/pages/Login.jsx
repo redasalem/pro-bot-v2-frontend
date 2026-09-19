@@ -21,6 +21,12 @@ export default function Login() {
     title: "",
     message: "",
   });
+  
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isPasswordValid = password.length >= 6;
 
   const { mutate: login, isPending } = useMutation({
     mutationFn: loginRequest,
@@ -50,6 +56,9 @@ export default function Login() {
   
   const handleSubmit = (e) => {
     e.preventDefault();
+    setEmailTouched(true);
+    setPasswordTouched(true);
+    if (!isEmailValid || !isPasswordValid) return;
     login({ email, password });
   };
 
@@ -85,8 +94,16 @@ export default function Login() {
                   required 
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)}
-                  className="min-h-[3rem] px-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-cyan focus:ring-4 focus:ring-cyan/10 outline-none transition-all"
+                  onBlur={() => setEmailTouched(true)}
+                  className={`min-h-[3rem] px-4 rounded-xl border bg-gray-50 focus:bg-white focus:ring-4 outline-none transition-all ${
+                    emailTouched && !isEmailValid 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
+                      : 'border-gray-200 focus:border-cyan focus:ring-cyan/10'
+                  }`}
                 />
+                {emailTouched && !isEmailValid && (
+                  <span className="text-xs text-red-500">يرجى إدخال بريد إلكتروني صحيح</span>
+                )}
               </label>
 
               <label className="flex flex-col gap-2 text-sm font-semibold text-ink-soft">
@@ -97,8 +114,16 @@ export default function Login() {
                   required 
                   value={password} 
                   onChange={(e)=> setPassword(e.target.value)}
-                  className="min-h-[3rem] px-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-cyan focus:ring-4 focus:ring-cyan/10 outline-none transition-all"
+                  onBlur={() => setPasswordTouched(true)}
+                  className={`min-h-[3rem] px-4 rounded-xl border bg-gray-50 focus:bg-white focus:ring-4 outline-none transition-all ${
+                    passwordTouched && !isPasswordValid 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' 
+                      : 'border-gray-200 focus:border-cyan focus:ring-cyan/10'
+                  }`}
                 />
+                {passwordTouched && !isPasswordValid && (
+                  <span className="text-xs text-red-500">كلمة المرور يجب أن تكون 6 أحرف على الأقل</span>
+                )}
               </label>
 
               <button 

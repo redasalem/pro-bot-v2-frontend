@@ -235,6 +235,7 @@ export default function Applicationcard({ application, currentTime }) {
     const [showConfirmForm, setShowConfirmForm] = useState(false);
     const [adminOptionsOpen, setAdminOptionsOpen] = useState(false);
     const [timelineOpen, setTimelineOpen] = useState(false);
+    const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: "", message: "", action: null, type: "" });
     const [selectedTransitionState, setSelectedTransitionState] = useState("");
     const [confirmFields, setConfirmFields] = useState({ confirmationNumber: "", appointmentId: "", scheduledAt: "", siteId: "" });
     const automation = application.automation || {};
@@ -557,7 +558,7 @@ export default function Applicationcard({ application, currentTime }) {
                 </button>
 
                 {!["cancelled", "confirmed", "rescheduled", "failed"].includes(state) && (
-                    <button disabled={appCancel.isPending} onClick={() => window.confirm("إلغاء الطلب نهائياً؟") && appCancel.mutate()} className={`${actionBtn} bg-red-50 text-red-600 hover:bg-red-100 mr-auto`}>
+                    <button disabled={appCancel.isPending} onClick={() => setConfirmDialog({ isOpen: true, title: "إلغاء الطلب", message: "هل أنت متأكد من إلغاء الطلب نهائياً؟", type: "danger", action: () => appCancel.mutate() })} className={`${actionBtn} bg-red-50 text-red-600 hover:bg-red-100 mr-auto`}>
                         {appCancel.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <XCircle size={16} />} إلغاء الطلب
                     </button>
                 )}
@@ -568,7 +569,7 @@ export default function Applicationcard({ application, currentTime }) {
                 <div className="grid-expand-inner">
                     <section className="mt-4 p-6 rounded-2xl bg-orange/5 border border-orange/20 flex flex-col gap-5">
                         <strong className="text-sm text-orange-dark">تأكيد الحجز يدويًا</strong>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <label className="flex flex-col gap-1.5 text-xs font-bold text-gray-700">
                                 رقم التأكيد *
                                 <input type="text" value={confirmFields.confirmationNumber} onChange={(e) => setConfirmFields((f) => ({ ...f, confirmationNumber: e.target.value }))} className="px-3 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-orange focus:ring-4 focus:ring-orange/10 outline-none transition-all" />
@@ -616,7 +617,7 @@ export default function Applicationcard({ application, currentTime }) {
                                 <span className="text-xs font-bold text-gray-700">التحكم في دفع الخدمة:</span>
                                 <button 
                                     disabled={payStatus.isPending} 
-                                    onClick={() => window.confirm("هل أنت متأكد من تغيير الدفع إلى 'مدفوع' يدويًا؟") && payStatus.mutate("paid")} 
+                                    onClick={() => setConfirmDialog({ isOpen: true, title: "تأكيد الدفع", message: "هل أنت متأكد من تغيير الدفع إلى 'مدفوع' يدويًا؟", type: "warning", action: () => payStatus.mutate("paid") })} 
                                     className="w-fit px-4 py-2.5 rounded-xl text-xs font-bold bg-white border border-gray-200 text-gray-800 hover:border-emerald-500 hover:text-emerald-700 hover-scale transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
                                 >
                                     {payStatus.isPending ? <span className="flex items-center gap-2"><LoaderCircle size={14} className="animate-spin" /> جارٍ التحديث…</span> : "تأكيد الدفع يدويًا"}
@@ -640,7 +641,7 @@ export default function Applicationcard({ application, currentTime }) {
                                 </select>
                                 <button 
                                     disabled={forceTransition.isPending || !selectedTransitionState || selectedTransitionState === state}
-                                    onClick={() => window.confirm(`تغيير الحالة إلى ${STATE_LABELS[selectedTransitionState]}؟`) && forceTransition.mutate(selectedTransitionState)}
+                                    onClick={() => setConfirmDialog({ isOpen: true, title: "تغيير إجباري", message: `هل أنت متأكد من تغيير الحالة إجبارياً إلى ${STATE_LABELS[selectedTransitionState] || selectedTransitionState}؟`, type: "danger", action: () => forceTransition.mutate(selectedTransitionState) })}
                                     className="px-5 py-2.5 rounded-xl text-xs font-bold bg-cyan-600 text-white hover:bg-cyan-700 hover-scale disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none transition-all"
                                 >
                                     {forceTransition.isPending ? <span className="flex items-center gap-2"><LoaderCircle size={14} className="animate-spin" /> جارٍ التغيير…</span> : "تنفيذ التغيير"}
@@ -650,6 +651,24 @@ export default function Applicationcard({ application, currentTime }) {
                     </section>
                 </div>
             </div>
+
+            {/* Custom Confirm Dialog */}
+            {confirmDialog.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95">
+                        <div className={`p-5 ${confirmDialog.type === "danger" ? "bg-red-50 text-red-900" : "bg-orange/10 text-orange-dark"}`}>
+                            <h3 className="font-bold text-lg m-0">{confirmDialog.title}</h3>
+                        </div>
+                        <div className="p-5 text-gray-600 text-sm leading-relaxed">
+                            {confirmDialog.message}
+                        </div>
+                        <div className="p-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100">
+                            <button onClick={() => setConfirmDialog({ isOpen: false, title: "", message: "", action: null, type: "" })} className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-200 transition-colors">إلغاء</button>
+                            <button onClick={() => { confirmDialog.action(); setConfirmDialog({ isOpen: false, title: "", message: "", action: null, type: "" }); }} className={`px-4 py-2 rounded-xl text-xs font-bold text-white transition-colors ${confirmDialog.type === "danger" ? "bg-red-600 hover:bg-red-700" : "bg-orange hover:bg-orange/90"}`}>تأكيد</button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </article>
     );
