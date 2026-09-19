@@ -30,7 +30,7 @@ PRO-BOT V2 is an advanced, automated booking and notification system tailored fo
 
 ---
 
-## 🚀 Features
+##  Features
 - **Secure Authentication:** JWT-based login with optimized session handling.
 - **Automated Workflows:** Background jobs integrated with Salla Webhooks and Prometric systems.
 - **Real-time Notifications:** Automated alerts and updates.
