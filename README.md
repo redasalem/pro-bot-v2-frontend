@@ -10,7 +10,7 @@ PRO-BOT V2 is an advanced, automated booking and notification system tailored fo
 
 ## 🌐 Live URLs
 - **Frontend (Cloudflare Pages):** [https://pro-bot-v2-frontend.tech-rm-re.workers.dev/login](https://pro-bot-v2-frontend.tech-rm-re.workers.dev/login)
-- **Backend API (Render):** [https://pro-bot-backend.onrender.com/](https://pro-bot-backend.onrender.com/)
+- **Backend API (Render):** [https://khaleeji-bot-v2-backend.onrender.com/](https://khaleeji-bot-v2-backend.onrender.com/)
 
 ---
 
@@ -55,7 +55,7 @@ npm install
 ### 3. Setup Environment Variables
 Create a `.env` file in the root directory and add the following:
 ```env
-VITE_API_BASE_URL=https://pro-bot-backend.onrender.com/api/v1
+VITE_API_BASE_URL=https://khaleeji-bot-v2-backend.onrender.com/api/v1
 ```
 
 ### 4. Run the Development Server
