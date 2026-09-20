@@ -32,13 +32,10 @@ export default function Login() {
     mutationFn: loginRequest,
     onSuccess: (data) => {
       const token = data.accessToken;
-      if (token) setToken(token);
-      setToast({
-        isOpen: true,
-        type: "success",
-        title: "تم تسجيل الدخول بنجاح",
-        message: "مرحباً بك، يمكنك الآن الدخول إلى لوحة التحكم.",
-      });
+      if (token) {
+        setToken(token);
+        window.location.href = "/dashboard";
+      }
     },
     onError: (err) => {
       const message =
