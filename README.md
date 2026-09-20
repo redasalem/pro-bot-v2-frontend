@@ -9,7 +9,7 @@
 PRO-BOT V2 is an advanced, automated booking and notification system tailored for scheduling, built with a modern React frontend and a powerful Express/Node.js backend. 
 
 ## 🌐 Live URLs
-- **Frontend (Cloudflare Pages):** [https://khaleeji-bot-v2-frontend.tech-rm-re.workers.dev/login](https://khaleeji-bot-v2-frontend.tech-rm-re.workers.dev/login)
+- **Frontend (Cloudflare Pages):** [https://pro-bot-v2-frontend.tech-rm-re.workers.dev/login](https://pro-bot-v2-frontend.tech-rm-re.workers.dev/login)
 - **Backend API (Render):** [https://khaleeji-bot-v2-backend.onrender.com/](https://khaleeji-bot-v2-backend.onrender.com/)
 
 ---
