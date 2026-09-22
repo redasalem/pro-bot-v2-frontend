@@ -420,6 +420,16 @@ export default function Applicationcard({ application, currentTime }) {
                 </div>
             </section>
 
+            {/* ── Candidate Details ────────────────────────────────── */}
+            {(application.nationalId || application.phone || automation.prometricCandidateId || automation.eligibilityId) && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {application.nationalId && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-indigo-50/60 text-xs text-indigo-500 group">الهوية الوطنية<strong className="text-indigo-900 text-sm font-mono flex items-center gap-1.5">{application.nationalId} <CopyButton text={application.nationalId} /></strong></div>}
+                    {application.phone && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-indigo-50/60 text-xs text-indigo-500 group">الجوال<strong className="text-indigo-900 text-sm font-mono flex items-center gap-1.5" dir="ltr">{application.phone} <CopyButton text={application.phone} /></strong></div>}
+                    {automation.prometricCandidateId && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-indigo-50/60 text-xs text-indigo-500 group">Prometric Candidate ID<strong className="text-indigo-900 text-sm font-mono flex items-center gap-1.5">{automation.prometricCandidateId} <CopyButton text={automation.prometricCandidateId} /></strong></div>}
+                    {automation.eligibilityId && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-indigo-50/60 text-xs text-indigo-500 group">رقم الأحقية<strong className="text-indigo-900 text-sm font-mono flex items-center gap-1.5">{automation.eligibilityId} <CopyButton text={automation.eligibilityId} /></strong></div>}
+                </div>
+            )}
+
             {/* ── Facts Grid ───────────────────────────────────────── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">دفع الخدمة<strong className="text-ink text-sm">{PAYMENT_LABELS[application.paymentStatus] || application.paymentStatus}</strong></div>
@@ -427,6 +437,7 @@ export default function Applicationcard({ application, currentTime }) {
                 <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">المواعيد المتاحة<strong className="text-ink text-sm">{availableSlotsCount}</strong></div>
                 <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">الفترة<strong className="text-ink text-sm">{formatDateRange(application.preferredDateRange)}</strong></div>
                 {cities.length > 0 && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500 md:col-span-2">المدن<strong className="text-ink text-sm">{cities.join("، ")}</strong></div>}
+                {hasFee && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">رسوم Prometric<strong className="text-ink text-sm">{feeAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {feeCurrency}</strong></div>}
                 {automation.attemptCount > 0 && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">محاولات<strong className="text-ink text-sm">{automation.attemptCount}</strong></div>}
                 {application.updatedAt && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">آخر تحديث<strong className="text-ink text-sm">{formatDate(application.updatedAt)}</strong></div>}
             </div>

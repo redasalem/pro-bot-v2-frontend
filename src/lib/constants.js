@@ -74,6 +74,10 @@ export const API_ERROR_MESSAGES = {
     "تكامل Prometric معطّل في هذه البيئة.",
   PROMETRIC_TELEMETRY_UNAVAILABLE:
     "بيانات الحماية (Telemetry) غير متاحة حاليًا. جارٍ إعادة التوليد.",
+  RESCHEDULE_FEE_NOT_VERIFIED:
+    "تعذر التحقق من رسوم إعادة الجدولة. لم يتم إرجاع قيمة مالية صالحة من Prometric.",
+  PROMETRIC_RESCHEDULE_BINDING_UNVERIFIED:
+    "لم يؤكد Prometric ربط الموعد البديل. تحقق من رد API قبل اعتبار العملية ناجحة.",
 };
 
 export const RETRYABLE_SEARCH_CODES = [
