@@ -242,16 +242,17 @@ export default function Dashboard() {
         ) : (
           <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 transition-opacity duration-300 ${isFetchingSummary ? "opacity-50" : "opacity-100"}`}>
             {stats.map(([label, count]) => (
-              <article key={label} className="flex flex-col justify-center bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover-scale hover:border-cyan-100 transition-all">
-                <strong className="text-3xl font-extrabold text-ink leading-none mb-2">{count}</strong>
-                <span className="text-xs font-bold text-gray-500">{label}</span>
+              <article key={label} className="relative flex flex-col justify-center bg-white border border-gray-200/60 rounded-2xl p-5 shadow-sm hover-scale group overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <strong className="relative z-10 text-3xl font-black text-ink leading-none mb-2 bg-gradient-to-br from-ink to-ink-soft bg-clip-text text-transparent">{count}</strong>
+                <span className="relative z-10 text-xs font-bold text-gray-500">{label}</span>
               </article>
             ))}
           </div>
         )}
 
-        {/* ── Quick Filter Tabs ─────────────────────────────────────── */}
-        <div className="flex overflow-x-auto filter-tabs gap-2 pb-1 -mb-1">
+        {/* ── Quick Filter Tabs (Segmented Control Style) ─────────────────────────────── */}
+        <div className="flex overflow-x-auto filter-tabs gap-2 pb-2 -mb-2 p-1.5 bg-gray-100/50 rounded-2xl border border-gray-200/60 shadow-inner">
           {STATE_FILTER_GROUPS.map((group) => {
             const Icon = FILTER_TAB_ICONS[group.icon] || LayoutGrid;
             const isActive = activeFilterKey === group.key;
@@ -260,16 +261,16 @@ export default function Dashboard() {
               <button
                 key={group.key}
                 onClick={() => setActiveFilterKey(group.key)}
-                className={`filter-tab flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all shrink-0 ${
+                className={`filter-tab flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-300 shrink-0 ${
                   isActive
-                    ? "bg-ink text-cyan shadow-md"
-                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-ink"
+                    ? "bg-white text-ink shadow-[0_2px_10px_rgb(0,0,0,0.06)] ring-1 ring-black/5"
+                    : "text-gray-500 hover:text-ink hover:bg-white/50"
                 }`}
               >
-                <Icon size={15} className={isActive ? "" : "opacity-60"} />
+                <Icon size={15} className={isActive ? "text-cyan" : "opacity-60"} />
                 {group.label}
-                <span className={`tabular-nums text-xs font-extrabold px-1.5 py-0.5 rounded-md ${
-                  isActive ? "bg-cyan/20 text-cyan" : "bg-gray-100 text-gray-500"
+                <span className={`tabular-nums text-[11px] font-black px-1.5 py-0.5 rounded-md transition-colors ${
+                  isActive ? "bg-cyan/10 text-cyan-dark" : "bg-gray-200/50 text-gray-500 group-hover:bg-gray-200"
                 }`}>
                   {count}
                 </span>
@@ -299,20 +300,20 @@ export default function Dashboard() {
 
           {/* Empty state */}
           {!isLoading && !isError && visible.length === 0 && (
-            <div className="flex flex-col items-center justify-center p-20 bg-white border border-dashed border-gray-300 rounded-3xl">
-              <div className="flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-6">
+            <div className="flex flex-col items-center justify-center p-20 bg-gray-50/30 border-2 border-dashed border-gray-200/80 rounded-[2rem]">
+              <div className="flex items-center justify-center w-24 h-24 rounded-full bg-white shadow-sm mb-6 border border-gray-100">
                 {hasActiveFilters ? (
-                  <SearchX size={36} className="text-gray-400" />
+                  <SearchX size={40} className="text-gray-300" />
                 ) : (
-                  <Inbox size={36} className="text-gray-400" />
+                  <Inbox size={40} className="text-gray-300" />
                 )}
               </div>
-              <p className="font-bold text-lg text-ink mb-1">
+              <p className="font-bold text-xl text-ink mb-2">
                 {hasActiveFilters
                   ? "لا توجد طلبات تطابق معايير البحث الحالية"
                   : "لا توجد طلبات في هذا الطابور"}
               </p>
-              <p className="text-sm text-gray-400 mb-6">
+              <p className="text-sm text-gray-400 mb-8 font-medium">
                 {hasActiveFilters
                   ? "جرّب تغيير كلمة البحث أو اختيار تصنيف مختلف."
                   : "لم يتم العثور على طلبات مطابقة للفلتر الحالي."}
@@ -320,7 +321,7 @@ export default function Dashboard() {
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-ink text-cyan font-bold text-sm hover-scale shadow-md"
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl bg-ink text-white font-bold text-sm hover-scale shadow-[0_8px_20px_rgb(15,23,42,0.15)]"
                 >
                   إعادة ضبط الفلاتر
                 </button>

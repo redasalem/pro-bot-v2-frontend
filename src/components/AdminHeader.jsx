@@ -58,32 +58,35 @@ export default function AdminHeader({ user, searchQuery, onSearchChange }) {
   const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.userAgent);
 
   return (
-    <header className="max-w-7xl mx-auto mt-4 px-5 py-4 bg-white border border-gray-200 rounded-3xl shadow-sm flex flex-col gap-5" dir="rtl">
+    <header className="sticky top-4 z-50 max-w-7xl mx-auto px-5 py-4 glass-panel rounded-3xl flex flex-col gap-5 transition-all duration-300" dir="rtl">
 
       {/* ── Top row: Brand + Nav + Session ──────────────────────────── */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
 
         {/* Brand */}
-        <div className="flex items-center gap-3 font-bold whitespace-nowrap">
-          <span className="flex items-center justify-center w-10 h-10 bg-ink text-cyan rounded-xl text-lg shadow-sm">K</span>
+        <div className="flex items-center gap-3 font-bold whitespace-nowrap group">
+          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-ink-soft to-ink text-cyan shadow-md hover-scale overflow-hidden">
+            <span className="relative z-10 text-xl font-black">K</span>
+            <div className="absolute inset-0 bg-cyan opacity-0 group-hover:opacity-20 transition-opacity duration-300 blur-md"></div>
+          </div>
           <div className="flex flex-col">
             <span className="text-ink leading-tight">Khaleeji Bot</span>
-            <small className="text-orange text-[10px] tracking-widest uppercase font-bold mt-0.5">Admin Controller</small>
+            <small className="bg-gradient-to-r from-orange to-orange-dark bg-clip-text text-transparent text-[10px] tracking-widest uppercase font-black mt-0.5">Admin Controller</small>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex items-center gap-2" aria-label="التنقل الرئيسي">
-          <NavLink 
-            to="/dashboard" 
-            className={({ isActive }) => `flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${isActive ? "bg-ink text-cyan shadow-md" : "text-gray-500 hover:bg-gray-50 hover:text-ink"}`}
+        <nav className="flex items-center gap-2 bg-gray-100/50 p-1 rounded-2xl border border-gray-200/60" aria-label="التنقل الرئيسي">
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) => `flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${isActive ? "bg-white text-ink shadow-[0_2px_10px_rgb(0,0,0,0.06)]" : "text-gray-500 hover:text-ink hover:bg-white/50"}`}
           >
             <ClipboardList size={18} />
             الطلبات
           </NavLink>
-          <NavLink 
-            to="/prometric-events" 
-            className={({ isActive }) => `flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${isActive ? "bg-ink text-cyan shadow-md" : "text-gray-500 hover:bg-gray-50 hover:text-ink"}`}
+          <NavLink
+            to="/prometric-events"
+            className={({ isActive }) => `flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300 ${isActive ? "bg-white text-ink shadow-[0_2px_10px_rgb(0,0,0,0.06)]" : "text-gray-500 hover:text-ink hover:bg-white/50"}`}
           >
             <Activity size={18} />
             سجل Prometric
@@ -99,7 +102,7 @@ export default function AdminHeader({ user, searchQuery, onSearchChange }) {
               onClick={() => !refresh.isPending && refresh.mutate()}
               disabled={refresh.isPending}
               title={`Telemetry Pool: ${poolCount} payload(s)${isRefilling ? " — refilling…" : ""}\nTotal issued: ${telemetry?.issuedTotal ?? 0}`}
-              className={`flex items-center gap-2.5 px-3.5 py-2 rounded-full text-xs font-extrabold transition-all hover-scale disabled:opacity-50 disabled:pointer-events-none ${poolTheme.wrapper}`}
+              className={`flex items-center gap-2.5 px-3.5 py-2 rounded-full text-xs font-extrabold transition-all hover-scale disabled:opacity-50 disabled:pointer-events-none shadow-sm ${poolTheme.wrapper}`}
             >
               <Shield size={14} />
               {/* Animated ping dot */}
@@ -114,11 +117,11 @@ export default function AdminHeader({ user, searchQuery, onSearchChange }) {
             </button>
           )}
 
-          <span className="truncate max-w-[120px]">{user?.name || user?.email}</span>
-          
-          <button 
-            onClick={logout} 
-            className="flex items-center gap-2 px-4 py-2 bg-orange-dark/10 text-orange-dark hover:bg-orange hover:text-white rounded-xl font-bold transition-all"
+          <span className="truncate max-w-[120px] ml-2 text-ink-soft">{user?.name || user?.email}</span>
+
+          <button
+            onClick={logout}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-dark hover:bg-orange hover:text-white rounded-xl font-bold transition-all shadow-sm"
           >
             <LogOut size={16} />
             خروج
@@ -127,9 +130,9 @@ export default function AdminHeader({ user, searchQuery, onSearchChange }) {
       </div>
 
       {/* ── Search & Command Bar ────────────────────────────────────── */}
-      <div className="relative w-full">
-        <label className="relative flex items-center bg-paper border border-gray-200 rounded-2xl px-4 py-2.5 gap-3 focus-within:ring-4 focus-within:ring-cyan/15 focus-within:border-cyan-dark transition-all">
-          <Search size={18} className="text-gray-400 shrink-0" />
+      <div className="relative w-full group">
+        <label className="relative flex items-center bg-gray-50/50 backdrop-blur-md border border-gray-200/80 rounded-2xl px-4 py-2.5 gap-3 focus-within:bg-white focus-within:ring-4 focus-within:ring-cyan/15 focus-within:border-cyan transition-all duration-300 shadow-sm focus-within:shadow-md">
+          <Search size={18} className="text-gray-400 shrink-0 group-focus-within:text-cyan transition-colors" />
           <input
             ref={searchRef}
             type="text"

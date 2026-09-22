@@ -346,9 +346,12 @@ export default function Applicationcard({ application, currentTime }) {
     const actionBtn = "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none";
 
     return (
-        <article className={`flex flex-col gap-6 p-7 bg-white border border-gray-200 shadow-sm rounded-3xl border-r-[6px] transition-all duration-300 hover:shadow-md ${theme.border}`}>
+        <article className="group flex flex-col gap-6 p-7 bg-white border border-gray-100 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-400 relative overflow-hidden">
             
-            {/* ── Header ────────────────────────────────────────────── */}
+            {/* Subtle left accent border instead of heavy right border */}
+            <div className={`absolute top-0 bottom-0 left-0 w-1.5 ${tone.bg.replace('/50', '')} opacity-70 group-hover:opacity-100 transition-opacity duration-300`} />
+            
+            {/* ── Header ────────────────────────────────────────────────────── */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-5">
                 <div className="flex flex-col gap-2 group">
                     <div className="flex flex-wrap items-center gap-2">
@@ -374,9 +377,9 @@ export default function Applicationcard({ application, currentTime }) {
                 </span>
             </div>
 
-            {/* ── Operational Summary ───────────────────────────────── */}
-            <section className={`flex items-start gap-4 p-5 rounded-2xl border ${theme.bg} ${theme.border.replace('border-r-', 'border-')}`}>
-                <div className={`flex items-center justify-center shrink-0 w-11 h-11 rounded-xl ${theme.iconBg} ${theme.iconText}`}>
+            {/* ── Operational Status Banner ─────────────────────────────── */}
+            <section className={`flex items-start gap-4 p-5 rounded-2xl border ${tone.border.replace('border-r-', 'border-')} ${tone.bg} backdrop-blur-md relative overflow-hidden`}>
+                <div className={`flex items-center justify-center w-12 h-12 rounded-xl shrink-0 ${tone.iconBg} ${tone.iconText} shadow-sm`}>
                     {status.tone === "error" || status.tone === "warning" ? <AlertTriangle size={20} /> :
                      status.tone === "running" ? <LoaderCircle size={20} className="animate-spin" /> :
                      status.tone === "payment" ? <Link2 size={20} /> :
@@ -423,23 +426,23 @@ export default function Applicationcard({ application, currentTime }) {
             {/* ── Candidate Details ────────────────────────────────── */}
             {(application.nationalId || application.phone || automation.prometricCandidateId || automation.eligibilityId) && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {application.nationalId && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-indigo-50/60 text-xs text-indigo-500 group">الهوية الوطنية<strong className="text-indigo-900 text-sm font-mono flex items-center gap-1.5">{application.nationalId} <CopyButton text={application.nationalId} /></strong></div>}
-                    {application.phone && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-indigo-50/60 text-xs text-indigo-500 group">الجوال<strong className="text-indigo-900 text-sm font-mono flex items-center gap-1.5" dir="ltr">{application.phone} <CopyButton text={application.phone} /></strong></div>}
-                    {automation.prometricCandidateId && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-indigo-50/60 text-xs text-indigo-500 group">Prometric Candidate ID<strong className="text-indigo-900 text-sm font-mono flex items-center gap-1.5">{automation.prometricCandidateId} <CopyButton text={automation.prometricCandidateId} /></strong></div>}
-                    {automation.eligibilityId && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-indigo-50/60 text-xs text-indigo-500 group">رقم الأحقية<strong className="text-indigo-900 text-sm font-mono flex items-center gap-1.5">{automation.eligibilityId} <CopyButton text={automation.eligibilityId} /></strong></div>}
+                    {application.nationalId && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50/50 ring-1 ring-gray-900/5 text-xs text-gray-500 group">الهوية الوطنية<strong className="text-ink text-sm font-mono flex items-center gap-1.5">{application.nationalId} <CopyButton text={application.nationalId} /></strong></div>}
+                    {application.phone && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50/50 ring-1 ring-gray-900/5 text-xs text-gray-500 group">الجوال<strong className="text-ink text-sm font-mono flex items-center gap-1.5" dir="ltr">{application.phone} <CopyButton text={application.phone} /></strong></div>}
+                    {automation.prometricCandidateId && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50/50 ring-1 ring-gray-900/5 text-xs text-gray-500 group">Prometric ID<strong className="text-ink text-sm font-mono flex items-center gap-1.5">{automation.prometricCandidateId} <CopyButton text={automation.prometricCandidateId} /></strong></div>}
+                    {automation.eligibilityId && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50/50 ring-1 ring-gray-900/5 text-xs text-gray-500 group">رقم الأحقية<strong className="text-ink text-sm font-mono flex items-center gap-1.5">{automation.eligibilityId} <CopyButton text={automation.eligibilityId} /></strong></div>}
                 </div>
             )}
 
             {/* ── Facts Grid ───────────────────────────────────────── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">دفع الخدمة<strong className="text-ink text-sm">{PAYMENT_LABELS[application.paymentStatus] || application.paymentStatus}</strong></div>
-                <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">المراكز المتاحة<strong className="text-ink text-sm">{availableSitesCount}</strong></div>
-                <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">المواعيد المتاحة<strong className="text-ink text-sm">{availableSlotsCount}</strong></div>
-                <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">الفترة<strong className="text-ink text-sm">{formatDateRange(application.preferredDateRange)}</strong></div>
-                {cities.length > 0 && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500 md:col-span-2">المدن<strong className="text-ink text-sm">{cities.join("، ")}</strong></div>}
-                {hasFee && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">رسوم Prometric<strong className="text-ink text-sm">{feeAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {feeCurrency}</strong></div>}
-                {automation.attemptCount > 0 && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">محاولات<strong className="text-ink text-sm">{automation.attemptCount}</strong></div>}
-                {application.updatedAt && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50 text-xs text-gray-500">آخر تحديث<strong className="text-ink text-sm">{formatDate(application.updatedAt)}</strong></div>}
+                <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50/50 ring-1 ring-gray-900/5 text-xs text-gray-500 hover:bg-white hover:shadow-sm transition-all">دفع الخدمة<strong className="text-ink text-sm">{PAYMENT_LABELS[application.paymentStatus] || application.paymentStatus}</strong></div>
+                <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50/50 ring-1 ring-gray-900/5 text-xs text-gray-500 hover:bg-white hover:shadow-sm transition-all">المراكز المتاحة<strong className="text-ink text-sm">{availableSitesCount}</strong></div>
+                <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50/50 ring-1 ring-gray-900/5 text-xs text-gray-500 hover:bg-white hover:shadow-sm transition-all">المواعيد المتاحة<strong className="text-ink text-sm">{availableSlotsCount}</strong></div>
+                <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50/50 ring-1 ring-gray-900/5 text-xs text-gray-500 hover:bg-white hover:shadow-sm transition-all">الفترة<strong className="text-ink text-sm">{formatDateRange(application.preferredDateRange)}</strong></div>
+                {cities.length > 0 && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50/50 ring-1 ring-gray-900/5 text-xs text-gray-500 md:col-span-2 hover:bg-white hover:shadow-sm transition-all">المدن<strong className="text-ink text-sm truncate" title={cities.join("، ")}>{cities.join("، ")}</strong></div>}
+                {hasFee && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50/50 ring-1 ring-gray-900/5 text-xs text-gray-500 hover:bg-white hover:shadow-sm transition-all">رسوم Prometric<strong className="text-ink text-sm">{feeAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {feeCurrency}</strong></div>}
+                {automation.attemptCount > 0 && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50/50 ring-1 ring-gray-900/5 text-xs text-gray-500 hover:bg-white hover:shadow-sm transition-all">محاولات<strong className="text-ink text-sm">{automation.attemptCount}</strong></div>}
+                {application.updatedAt && <div className="flex flex-col gap-1 p-3.5 rounded-xl bg-gray-50/50 ring-1 ring-gray-900/5 text-xs text-gray-500 hover:bg-white hover:shadow-sm transition-all">آخر تحديث<strong className="text-ink text-sm">{formatDate(application.updatedAt)}</strong></div>}
             </div>
 
             {/* ── Selected Slot info ───────────────────────────────── */}
