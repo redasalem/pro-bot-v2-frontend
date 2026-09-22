@@ -349,7 +349,7 @@ export default function Applicationcard({ application, currentTime }) {
         <article className="group flex flex-col gap-6 p-7 bg-white border border-gray-100 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-400 relative overflow-hidden">
             
             {/* Subtle left accent border instead of heavy right border */}
-            <div className={`absolute top-0 bottom-0 left-0 w-1.5 ${tone.bg.replace('/50', '')} opacity-70 group-hover:opacity-100 transition-opacity duration-300`} />
+            <div className={`absolute top-0 bottom-0 left-0 w-1.5 ${theme.bg.replace('/50', '')} opacity-70 group-hover:opacity-100 transition-opacity duration-300`} />
             
             {/* ── Header ────────────────────────────────────────────────────── */}
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-5">
@@ -378,8 +378,8 @@ export default function Applicationcard({ application, currentTime }) {
             </div>
 
             {/* ── Operational Status Banner ─────────────────────────────── */}
-            <section className={`flex items-start gap-4 p-5 rounded-2xl border ${tone.border.replace('border-r-', 'border-')} ${tone.bg} backdrop-blur-md relative overflow-hidden`}>
-                <div className={`flex items-center justify-center w-12 h-12 rounded-xl shrink-0 ${tone.iconBg} ${tone.iconText} shadow-sm`}>
+            <section className={`flex items-start gap-4 p-5 rounded-2xl border ${theme.border.replace('border-r-', 'border-')} ${theme.bg} backdrop-blur-md relative overflow-hidden`}>
+                <div className={`flex items-center justify-center w-12 h-12 rounded-xl shrink-0 ${theme.iconBg} ${theme.iconText} shadow-sm`}>
                     {status.tone === "error" || status.tone === "warning" ? <AlertTriangle size={20} /> :
                      status.tone === "running" ? <LoaderCircle size={20} className="animate-spin" /> :
                      status.tone === "payment" ? <Link2 size={20} /> :
