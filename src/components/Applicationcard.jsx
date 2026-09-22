@@ -393,30 +393,43 @@ export default function Applicationcard({ application, currentTime }) {
             </section>
 
             {/* ── Workflow Progress ─────────────────────────────────── */}
-            <section className="flex flex-col gap-4 p-5 border border-gray-200 rounded-2xl">
+            <section className="flex flex-col gap-4 p-5 border border-gray-100 rounded-2xl bg-gray-50/30">
                 <div className="flex items-center justify-between text-xs font-semibold text-gray-500">
                     <span className="tracking-wide">مسار التنفيذ</span>
                     <span>{workflowSteps.filter(s => s.done).length} من {workflowSteps.length}</span>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                <div className="relative flex justify-between items-start w-full">
+                    {/* Glowing connecting line background */}
+                    <div className="absolute top-4 left-6 right-6 h-1 bg-gray-200 rounded-full z-0"></div>
+                    {/* Active glowing line */}
+                    <div 
+                        className="absolute top-4 right-6 h-1 bg-gradient-to-l from-cyan to-cyan-dark rounded-full z-0 transition-all duration-700 ease-in-out shadow-[0_0_8px_rgba(20,184,166,0.6)]"
+                        style={{ width: `${Math.max(0, (workflowSteps.filter(s => s.done).length - 1) / (workflowSteps.length - 1) * 100)}%` }}
+                    ></div>
+                    
                     {workflowSteps.map((step, index) => {
                         const StepIcon = step.Icon || Circle;
                         const current = !errorCode && index === firstPendingIndex;
                         const stepStyle = step.done 
-                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" 
+                            ? "text-emerald-700" 
                             : step.warning 
-                                ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200" 
+                                ? "text-amber-700" 
                                 : current 
-                                    ? "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200" 
-                                    : "bg-gray-50 text-gray-400";
-                        const iconStyle = step.done ? "bg-emerald-500 text-white border-emerald-500" : current ? "border-cyan-500 text-cyan-600" : "border-gray-300 text-gray-400 bg-white";
+                                    ? "text-cyan-700" 
+                                    : "text-gray-400";
+                        
+                        const iconWrapperStyle = step.done 
+                            ? "bg-emerald-500 text-white shadow-[0_0_12px_rgba(16,185,129,0.4)] border-transparent" 
+                            : current 
+                                ? "bg-white border-2 border-cyan text-cyan-600 shadow-[0_0_12px_rgba(20,184,166,0.4)]" 
+                                : "bg-white border-2 border-gray-200 text-gray-300";
 
                         return (
-                            <div key={step.label} className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all ${stepStyle}`}>
-                                <span className={`flex items-center justify-center w-7 h-7 rounded-full border-2 ${iconStyle}`}>
-                                    {step.done ? <Check size={14} strokeWidth={3} /> : current ? <LoaderCircle size={14} className="animate-spin" /> : <StepIcon size={14} />}
+                            <div key={step.label} className={`relative z-10 flex flex-col items-center gap-2 transition-all w-full ${stepStyle}`}>
+                                <span className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-500 ${iconWrapperStyle}`}>
+                                    {step.done ? <Check size={16} strokeWidth={3} /> : current ? <LoaderCircle size={16} className="animate-spin" /> : <StepIcon size={16} />}
                                 </span>
-                                <small className="font-bold text-[11px]">{step.label}</small>
+                                <small className="font-bold text-[11px] whitespace-nowrap">{step.label}</small>
                             </div>
                         );
                     })}

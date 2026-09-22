@@ -252,31 +252,33 @@ export default function Dashboard() {
         )}
 
         {/* ── Quick Filter Tabs (Segmented Control Style) ─────────────────────────────── */}
-        <div className="flex overflow-x-auto filter-tabs gap-2 pb-2 -mb-2 p-1.5 bg-gray-100/50 rounded-2xl border border-gray-200/60 shadow-inner">
-          {STATE_FILTER_GROUPS.map((group) => {
-            const Icon = FILTER_TAB_ICONS[group.icon] || LayoutGrid;
-            const isActive = activeFilterKey === group.key;
-            const count = groupCounts[group.key] ?? 0;
-            return (
-              <button
-                key={group.key}
-                onClick={() => setActiveFilterKey(group.key)}
-                className={`filter-tab flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all duration-300 shrink-0 ${
-                  isActive
-                    ? "bg-white text-ink shadow-[0_2px_10px_rgb(0,0,0,0.06)] ring-1 ring-black/5"
-                    : "text-gray-500 hover:text-ink hover:bg-white/50"
-                }`}
-              >
-                <Icon size={15} className={isActive ? "text-cyan" : "opacity-60"} />
-                {group.label}
-                <span className={`tabular-nums text-[11px] font-black px-1.5 py-0.5 rounded-md transition-colors ${
-                  isActive ? "bg-cyan/10 text-cyan-dark" : "bg-gray-200/50 text-gray-500 group-hover:bg-gray-200"
-                }`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
+        <div className="flex overflow-x-auto filter-tabs pb-2 -mb-2">
+          <div className="inline-flex gap-1 p-1 bg-gray-100/70 rounded-xl border border-gray-200/50 shadow-inner w-max">
+            {STATE_FILTER_GROUPS.map((group) => {
+              const Icon = FILTER_TAB_ICONS[group.icon] || LayoutGrid;
+              const isActive = activeFilterKey === group.key;
+              const count = groupCounts[group.key] ?? 0;
+              return (
+                <button
+                  key={group.key}
+                  onClick={() => setActiveFilterKey(group.key)}
+                  className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all duration-300 shrink-0 ${
+                    isActive
+                      ? "bg-white text-ink shadow-[0_2px_8px_rgb(0,0,0,0.08)] ring-1 ring-black/5"
+                      : "text-gray-500 hover:text-ink hover:bg-gray-50/50"
+                  }`}
+                >
+                  <Icon size={15} className={isActive ? "text-cyan" : "opacity-60"} />
+                  {group.label}
+                  <span className={`tabular-nums text-[11px] font-black px-1.5 py-0.5 rounded-md transition-colors ${
+                    isActive ? "bg-cyan/10 text-cyan-dark" : "bg-gray-200/50 text-gray-500 group-hover:bg-gray-200"
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* ── Application List ──────────────────────────────────────── */}
