@@ -604,7 +604,7 @@ export default function Applicationcard({ application, currentTime }) {
                                 <input type="text" value={confirmFields.confirmationNumber} onChange={(e) => setConfirmFields((f) => ({ ...f, confirmationNumber: e.target.value }))} className="px-3 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-orange focus:ring-4 focus:ring-orange/10 outline-none transition-all" />
                             </label>
                             <label className="flex flex-col gap-1.5 text-xs font-bold text-gray-700">
-                                Appointment ID *
+                                Appointment ID
                                 <input type="text" value={confirmFields.appointmentId} onChange={(e) => setConfirmFields((f) => ({ ...f, appointmentId: e.target.value }))} className="px-3 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-orange focus:ring-4 focus:ring-orange/10 outline-none transition-all" />
                             </label>
                             <label className="flex flex-col gap-1.5 text-xs font-bold text-gray-700">

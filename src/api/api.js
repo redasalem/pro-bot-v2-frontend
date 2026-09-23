@@ -20,8 +20,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(null, async (error) => {
   const config = error.config;
 
-  // Only retry on network errors or timeouts, and only once
-  const isRetryable = !error.response && (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK" || !error.code);
+  // Only retry on network errors or timeouts, and only once, and only for GET requests
+  const isRetryable = !error.response && 
+    (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK" || !error.code) &&
+    config.method?.toLowerCase() === "get";
   if (isRetryable && !config.__retried) {
     config.__retried = true;
     await new Promise((r) => setTimeout(r, 3000));
