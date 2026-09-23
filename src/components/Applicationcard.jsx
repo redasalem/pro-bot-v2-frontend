@@ -576,7 +576,7 @@ export default function Applicationcard({ application, currentTime }) {
                     </button>
                 )}
 
-                {state === "manual_payment_required" && (
+                {["manual_payment_required", "manual_review", "searching", "reschedule_searching"].includes(state) && (
                     <button onClick={() => setShowConfirmForm((v) => !v)} className={`${actionBtn} ${showConfirmForm ? "bg-orange/10 text-orange-dark" : "bg-gray-50 text-gray-700 hover:bg-gray-100"}`}>
                         <ClipboardEdit size={16} /> {showConfirmForm ? "إغلاق النموذج" : "تأكيد الدفع اليدوي"}
                     </button>
@@ -594,7 +594,7 @@ export default function Applicationcard({ application, currentTime }) {
             </section>
 
             {/* ── Manual Confirm Form (Zero-CLS) ──────────────────── */}
-            <div className={`grid-expand ${showConfirmForm && state === "manual_payment_required" ? "open" : ""}`}>
+            <div className={`grid-expand ${showConfirmForm && ["manual_payment_required", "manual_review", "searching", "reschedule_searching"].includes(state) ? "open" : ""}`}>
                 <div className="grid-expand-inner">
                     <section className="mt-4 p-6 rounded-2xl bg-orange/5 border border-orange/20 flex flex-col gap-5">
                         <strong className="text-sm text-orange-dark">تأكيد الحجز يدويًا</strong>
