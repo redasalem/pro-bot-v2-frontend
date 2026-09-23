@@ -618,9 +618,10 @@ export default function Applicationcard({ application, currentTime }) {
                         </div>
                         <div className="flex justify-end pt-2">
                             <button
-                                disabled={manualConfirm.isPending || !confirmFields.confirmationNumber.trim() || !confirmFields.appointmentId.trim()}
+                                disabled={manualConfirm.isPending || !confirmFields.confirmationNumber.trim()}
                                 onClick={() => {
-                                    const body = { confirmationNumber: confirmFields.confirmationNumber.trim(), appointmentId: confirmFields.appointmentId.trim() };
+                                    const body = { confirmationNumber: confirmFields.confirmationNumber.trim() };
+                                    if (confirmFields.appointmentId.trim()) body.appointmentId = confirmFields.appointmentId.trim();
                                     if (confirmFields.scheduledAt) body.scheduledAt = new Date(confirmFields.scheduledAt).toISOString();
                                     if (confirmFields.siteId.trim()) body.siteId = confirmFields.siteId.trim();
                                     manualConfirm.mutate(body);
