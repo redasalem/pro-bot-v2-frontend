@@ -58,4 +58,22 @@ export const refreshTelemetry = async () => {
 export const deleteApplication = async (id) => {
     const { data } = await api.delete(`api/v1/applications/${id}`);
     return data;
+};
+
+// Trigger an immediate slot scan without waiting for the polling interval
+export const triggerImmediateScan = async () => {
+    const { data } = await api.post("api/v1/prometric/scan/trigger", {});
+    return data;
+};
+
+// Pause automation for a single application (force to a manual_review state)
+export const pauseApplicationAutomation = async (id) => {
+    const { data } = await api.post(`api/v1/booking-workflow/${id}/transition`, { state: "manual_review" });
+    return data;
+};
+
+// Resume automation for a single application (force back to searching)
+export const resumeApplicationAutomation = async (id) => {
+    const { data } = await api.post(`api/v1/booking-workflow/${id}/start-search`, {});
+    return data;
 };

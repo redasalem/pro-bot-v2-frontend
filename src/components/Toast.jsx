@@ -1,4 +1,3 @@
-import React from 'react';
 import { BadgeCheck, CircleOff } from 'lucide-react';
 
 const Toast = ({ isOpen, type = 'success', title, message, onClose, actionLabel = 'OK' }) => {

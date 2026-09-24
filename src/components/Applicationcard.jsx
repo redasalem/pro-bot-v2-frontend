@@ -20,7 +20,10 @@ import {
     Clock,
     ExternalLink,
     Trash2,
+    Play,
+    Pause,
 } from "lucide-react";
+import { toast } from "sonner";
 import { 
     createPaymentSession,
     triggerEligibilityCheck,
@@ -30,6 +33,8 @@ import {
     forceTransitionState,
     updatePaymentStatus,
     deleteApplication,
+    pauseApplicationAutomation,
+    resumeApplicationAutomation,
 } from "../api/applications";
 import {
     STATE_LABELS,
@@ -314,6 +319,22 @@ export default function Applicationcard({ application, currentTime }) {
         onSuccess: invalidateAll,
     });
 
+    const pauseBot = useMutation({
+        mutationFn: () => pauseApplicationAutomation(application._id),
+        onSuccess: () => {
+            invalidateAll();
+            toast.success("تم إيقاف البوت مؤقتاً لهذا الطلب");
+        },
+    });
+
+    const resumeBot = useMutation({
+        mutationFn: () => resumeApplicationAutomation(application._id),
+        onSuccess: () => {
+            invalidateAll();
+            toast.success("تم تفعيل البوت وسيستأنف العمل");
+        },
+    });
+
     // ── Derived display state ───────────────────────────────────────
     const status = operationalStatus({ state, automation, hasActiveLink, checkoutExpired, selectedSlotPassed, errorMessage });
     const theme = TONE_STYLES[status.tone] || TONE_STYLES.neutral;
@@ -578,6 +599,16 @@ export default function Applicationcard({ application, currentTime }) {
                         {searchRestart.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <RefreshCw size={16} />} إعادة البحث
                     </button>
                 )}
+
+                {state === "manual_review" || state === "failed" ? (
+                    <button disabled={resumeBot.isPending} onClick={() => resumeBot.mutate()} className={`${actionBtn} bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-900`}>
+                        {resumeBot.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <Play size={16} />} تشغيل البوت
+                    </button>
+                ) : !["draft", "awaiting_service_payment", "booking", "confirmed", "rescheduled", "cancelled", "failed", "manual_review"].includes(state) ? (
+                    <button disabled={pauseBot.isPending} onClick={() => pauseBot.mutate()} className={`${actionBtn} bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-900`}>
+                        {pauseBot.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <Pause size={16} />} إيقاف مؤقت
+                    </button>
+                ) : null}
 
                 {!["draft", "awaiting_service_payment", "ready", "confirmed", "rescheduled", "cancelled"].includes(state) && (
                     <button disabled={forceTransition.isPending} onClick={() => forceTransition.mutate("ready")} className={`${actionBtn} bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-ink`}>

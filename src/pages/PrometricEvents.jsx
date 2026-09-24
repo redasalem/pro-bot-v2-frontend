@@ -65,7 +65,6 @@ const ERROR_HELP = {
 };
 
 const formatTime = (value) => new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium", timeStyle: "medium" }).format(new Date(value));
-const formatDate = (value) => value ? new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium" }).format(new Date(value)) : null;
 const formatDuration = (value) => {
   if (value == null) return null;
   if (value < 1000) return `${value} ms`;

@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   RefreshCw,
   Inbox,
@@ -10,14 +9,16 @@ import {
   AlertTriangle,
   CircleCheck,
   XCircle,
+  Activity,
+  Zap,
+  Clock,
 } from "lucide-react";
+import { toast } from "sonner";
 import { getMe } from "../api/auth";
-import { getAllApplications, getAdminSummary } from "../api/applications";
-import { clearToken } from "../lib/auth";
+import { getAllApplications, getAdminSummary, triggerImmediateScan } from "../api/applications";
 import {
   ACTIVE_AUTOMATION_STATES,
   RETRYABLE_SEARCH_CODES,
-  STATE_LABELS,
   STATE_FILTER_GROUPS,
 } from "../lib/constants";
 import Applicationcard from "../components/Applicationcard";
@@ -107,11 +108,61 @@ function SkeletonStat() {
   );
 }
 
+// ── Bot Status Bar ───────────────────────────────────────────────────────
+function BotStatusBar({ applications, isFetching, refetch }) {
+  const isBotActive = applications.some(isRunning);
+  
+  // Get most recent check time across all apps
+  const lastChecked = applications.reduce((latest, app) => {
+    if (app.automation?.lastCheckedAt) {
+      const d = new Date(app.automation.lastCheckedAt).getTime();
+      if (d > latest) return d;
+    }
+    return latest;
+  }, 0);
+
+  const handleImmediateScan = () => {
+    const promise = triggerImmediateScan().then(() => refetch());
+    toast.promise(promise, {
+      loading: "جارٍ إرسال أمر فحص فوري...",
+      success: "تم تحفيز الفحص الفوري بنجاح، البوت سيبحث الآن",
+      error: "حدث خطأ أثناء تشغيل الفحص",
+    });
+  };
+
+  return (
+    <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-5 mb-2 bg-white border border-gray-200 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.02)]">
+      <div className="flex items-center gap-4 w-full md:w-auto">
+        <div className={`flex items-center justify-center w-12 h-12 rounded-full transition-colors duration-500 ${isBotActive ? "bg-cyan/10 text-cyan-700 ring-2 ring-cyan/20 ring-offset-2" : "bg-gray-100 text-gray-500"}`}>
+          {isBotActive ? <LoaderCircle size={24} className="animate-spin" /> : <Activity size={24} />}
+        </div>
+        <div className="flex flex-col gap-1">
+          <strong className="text-base text-ink flex items-center gap-2">
+            {isBotActive ? "البوت يبحث الآن عن مواعيد" : "البوت في وضع الاستعداد"}
+            {isBotActive && <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan opacity-75"></span><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan"></span></span>}
+          </strong>
+          <span className="text-xs font-bold text-gray-500 flex items-center gap-1.5">
+            <Clock size={12} />
+            آخر فحص: {lastChecked > 0 ? new Date(lastChecked).toLocaleTimeString('ar-SA', { hour: '2-digit', minute:'2-digit' }) : "غير محدد"}
+          </span>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 w-full md:w-auto">
+        <button
+          onClick={handleImmediateScan}
+          disabled={isFetching}
+          className="flex items-center justify-center gap-2 w-full md:w-auto px-6 py-3 rounded-xl bg-ink text-white font-bold text-sm hover-scale shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        >
+          <Zap size={16} className={isFetching ? "animate-pulse text-cyan" : "text-yellow-400"} />
+          {isFetching ? "جارٍ التحديث..." : "تشغيل فحص فوري الآن"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Dashboard ─────────────────────────────────────────────────────
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
   const [activeFilterKey, setActiveFilterKey] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
@@ -290,6 +341,9 @@ export default function Dashboard() {
             تحديث
           </button>
         </div>
+
+        {/* ── Bot Status & Controls ──────────────────────────────────── */}
+        <BotStatusBar applications={applications} isFetching={isFetching} refetch={refetch} />
 
         {/* ── Stats Grid (with skeleton) ────────────────────────────── */}
         {isLoading ? (
