@@ -565,25 +565,25 @@ export default function Applicationcard({ application, currentTime }) {
 
             {/* ── Admin Toolbar ────────────────────────────────────── */}
             <section className="flex flex-wrap gap-3 pt-5 border-t border-dashed border-gray-200 mt-2">
-                {!["draft", "cancelled", "confirmed", "rescheduled", "booking", "awaiting_service_payment"].includes(state) && (
+                {!["draft", "awaiting_service_payment", "booking", "confirmed", "rescheduled", "cancelled"].includes(state) && (
                     <button disabled={eligibilityCheck.isPending} onClick={() => eligibilityCheck.mutate()} className={`${actionBtn} bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-ink`}>
                         {eligibilityCheck.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <ShieldCheck size={16} />} فحص الأحقية
                     </button>
                 )}
                 
-                {!["draft", "cancelled", "confirmed", "rescheduled", "awaiting_service_payment", "ready"].includes(state) && (
+                {!["draft", "awaiting_service_payment", "ready", "validating_eligibility", "booking", "confirmed", "rescheduled", "cancelled"].includes(state) && (
                     <button disabled={searchRestart.isPending} onClick={() => searchRestart.mutate()} className={`${actionBtn} bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-ink`}>
                         {searchRestart.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <RefreshCw size={16} />} إعادة البحث
                     </button>
                 )}
 
-                {!["draft", "ready", "confirmed", "cancelled", "rescheduled", "awaiting_service_payment"].includes(state) && (
+                {!["draft", "awaiting_service_payment", "ready", "confirmed", "rescheduled", "cancelled"].includes(state) && (
                     <button disabled={forceTransition.isPending} onClick={() => forceTransition.mutate("ready")} className={`${actionBtn} bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-ink`}>
                         {forceTransition.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <ArrowRight size={16} />} إرجاع إلى جاهز
                     </button>
                 )}
 
-                {!["draft", "cancelled", "confirmed", "rescheduled", "awaiting_service_payment"].includes(state) && (
+                {!["draft", "awaiting_service_payment", "cancelled", "confirmed", "rescheduled"].includes(state) && (
                     <button onClick={() => setShowConfirmForm((v) => !v)} className={`${actionBtn} ${showConfirmForm ? "bg-orange/10 text-orange-dark" : "bg-gray-50 text-gray-700 hover:bg-gray-100"}`}>
                         <ClipboardEdit size={16} /> {showConfirmForm ? "إغلاق النموذج" : "تأكيد الدفع اليدوي"}
                     </button>
@@ -593,13 +593,13 @@ export default function Applicationcard({ application, currentTime }) {
                     <Settings size={16} /> خيارات متقدمة
                 </button>
 
-                {!["cancelled", "confirmed", "rescheduled", "failed"].includes(state) && (
+                {!["cancelled", "confirmed", "rescheduled"].includes(state) && (
                     <button disabled={appCancel.isPending} onClick={() => setConfirmDialog({ isOpen: true, title: "إلغاء الطلب", message: "هل أنت متأكد من إلغاء الطلب؟ (لن يستكمل البوت العمل عليه)", type: "warning", action: () => appCancel.mutate() })} className={`${actionBtn} bg-red-50 text-red-600 hover:bg-red-100 mr-auto`}>
                         {appCancel.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <XCircle size={16} />} إلغاء الطلب
                     </button>
                 )}
 
-                <button disabled={appDelete.isPending} onClick={() => setConfirmDialog({ isOpen: true, title: "حذف الطلب نهائياً", message: "هل أنت متأكد من حذف الطلب نهائياً من قاعدة البيانات؟ لا يمكن التراجع عن هذا الإجراء وسوف يختفي من اللوحة.", type: "danger", action: () => appDelete.mutate() })} className={`${actionBtn} bg-red-600 text-white hover:bg-red-700 ${["cancelled", "confirmed", "rescheduled", "failed"].includes(state) ? "mr-auto" : ""}`}>
+                <button disabled={appDelete.isPending} onClick={() => setConfirmDialog({ isOpen: true, title: "حذف الطلب نهائياً", message: "هل أنت متأكد من حذف الطلب نهائياً من قاعدة البيانات؟ لا يمكن التراجع عن هذا الإجراء وسوف يختفي من اللوحة.", type: "danger", action: () => appDelete.mutate() })} className={`${actionBtn} bg-red-600 text-white hover:bg-red-700 ${["cancelled", "confirmed", "rescheduled"].includes(state) ? "mr-auto" : ""}`}>
                     {appDelete.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <Trash2 size={16} />} حذف نهائي
                 </button>
             </section>
