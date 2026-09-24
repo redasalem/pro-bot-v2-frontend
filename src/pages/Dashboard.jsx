@@ -192,6 +192,8 @@ export default function Dashboard() {
         const haystack = [
           app.fullName,
           app.email,
+          app.phone,
+          app.nationalId,
           app._id,
           app.automation?.eligibilityId,
           app.currentAppointment?.confirmationNumber,
