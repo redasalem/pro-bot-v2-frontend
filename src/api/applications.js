@@ -5,6 +5,11 @@ export const getAllApplications = async () => {
     return data.data || [];
 };
 
+export const getActiveStatus = async () => {
+    const { data } = await api.get("api/v1/applications/active-status");
+    return data.data || [];
+};
+
 export const getAdminSummary = async () => {
     const { data } = await api.get("api/v1/admin-operations/summary");
     return data.data?.counts || {};

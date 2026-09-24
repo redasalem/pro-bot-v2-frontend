@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   RefreshCw,
   Inbox,
@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getMe } from "../api/auth";
-import { getAllApplications, getAdminSummary, triggerImmediateScan } from "../api/applications";
+import { getAllApplications, getAdminSummary, triggerImmediateScan, getActiveStatus } from "../api/applications";
 import {
   ACTIVE_AUTOMATION_STATES,
   RETRYABLE_SEARCH_CODES,
@@ -30,13 +30,6 @@ const isRunning = (app) => {
   if (automation.lastError?.code && !RETRYABLE_SEARCH_CODES.includes(automation.lastError.code)) return false;
   if (ACTIVE_AUTOMATION_STATES.includes(automation.state)) return true;
   return automation.state === "manual_payment_required" && !automation.prometricCheckoutUrl;
-};
-
-const pollWhileActive = (query) => {
-  const applications = query.state.data || [];
-  if (applications.some(isRunning)) return 3000;
-  if (applications.some((app) => app.automation?.state === "manual_payment_required")) return 30000;
-  return false;
 };
 
 const FILTER_TAB_ICONS = {
@@ -170,6 +163,8 @@ export default function Dashboard() {
 
   const { data: user } = useQuery({ queryKey: ["me"], queryFn: getMe });
 
+  const queryClient = useQueryClient();
+
   const {
     data: applications = [],
     isLoading,
@@ -181,8 +176,62 @@ export default function Dashboard() {
   } = useQuery({
     queryKey: ["applications"],
     queryFn: getAllApplications,
-    refetchInterval: pollWhileActive,
+    refetchInterval: false,
   });
+
+  const pollInterval = useMemo(() => {
+    if (applications.some(isRunning)) return 3000;
+    if (applications.some((app) => app.automation?.state === "manual_payment_required")) return 30000;
+    return false;
+  }, [applications]);
+
+  const { data: activeStatuses } = useQuery({
+    queryKey: ["active-status"],
+    queryFn: getActiveStatus,
+    refetchInterval: pollInterval,
+  });
+
+  useEffect(() => {
+    if (activeStatuses) {
+      let needsFullRefetch = false;
+      queryClient.setQueryData(["applications"], (oldApps) => {
+        if (!oldApps) return oldApps;
+        let changed = false;
+        const oldAppsMap = new Map(oldApps.map(app => [app._id, app]));
+        const newApps = oldApps.map(app => {
+          const update = activeStatuses.find(a => a._id === app._id);
+          if (update) {
+            const newAutomation = { ...(app.automation || {}), ...(update.automation || {}) };
+            const isDifferent = 
+                app.automation?.state !== update.automation?.state ||
+                app.automation?.nextAttemptAt !== update.automation?.nextAttemptAt ||
+                app.paymentStatus !== update.paymentStatus ||
+                app.automation?.lastError?.code !== update.automation?.lastError?.code ||
+                app.automation?.prometricCheckoutUrl !== update.automation?.prometricCheckoutUrl;
+
+            if (isDifferent) {
+                changed = true;
+                return { ...app, ...update, automation: newAutomation };
+            }
+          } else if (isRunning(app)) {
+             needsFullRefetch = true;
+          }
+          return app;
+        });
+
+        for (const status of activeStatuses) {
+           if (!oldAppsMap.has(status._id)) {
+              needsFullRefetch = true;
+           }
+        }
+        return changed ? newApps : oldApps;
+      });
+
+      if (needsFullRefetch) {
+         refetch();
+      }
+    }
+  }, [activeStatuses, queryClient, refetch]);
 
   const { data: summary = {}, isFetching: isFetchingSummary } = useQuery({
     queryKey: ["admin-summary"],
