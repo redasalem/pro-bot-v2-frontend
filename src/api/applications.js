@@ -53,4 +53,9 @@ export const getTelemetryStatus = async () => {
 export const refreshTelemetry = async () => {
     const { data } = await api.post("api/v1/prometric/telemetry/refresh", {});
     return data.data;
+};
+
+export const deleteApplication = async (id) => {
+    const { data } = await api.delete(`api/v1/applications/${id}`);
+    return data;
 };

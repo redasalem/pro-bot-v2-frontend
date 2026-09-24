@@ -114,6 +114,8 @@ export default function Dashboard() {
 
   const [activeFilterKey, setActiveFilterKey] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("");
 
   const { data: user } = useQuery({ queryKey: ["me"], queryFn: getMe });
 
@@ -164,6 +166,25 @@ export default function Dashboard() {
       filtered = filtered.filter((app) => group.states.includes(app.automation?.state));
     }
 
+    // City filter
+    if (selectedCity) {
+      filtered = filtered.filter(app => 
+        app.preferredCities?.some(c => c.name === selectedCity)
+      );
+    }
+
+    // Month filter
+    if (selectedMonth) {
+      filtered = filtered.filter(app => {
+        const from = app.preferredDateRange?.from;
+        if (!from) return false;
+        const d = new Date(from);
+        if (isNaN(d.getTime())) return false;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        return key === selectedMonth;
+      });
+    }
+
     // Search filter
     const q = searchQuery.trim().toLowerCase();
     if (q) {
@@ -174,6 +195,7 @@ export default function Dashboard() {
           app._id,
           app.automation?.eligibilityId,
           app.currentAppointment?.confirmationNumber,
+          app.externalOrder?.orderId,
           app.examCode,
           app.examId?.title,
           ...(app.preferredCities?.map((c) => c.name) || []),
@@ -185,8 +207,11 @@ export default function Dashboard() {
       });
     }
 
+    // Sort recently updated first
+    filtered.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+
     return filtered;
-  }, [applications, activeFilterKey, searchQuery]);
+  }, [applications, activeFilterKey, searchQuery, selectedCity, selectedMonth]);
 
   // ── Filter tab counts ─────────────────────────────────────────────
   const groupCounts = useMemo(() => {
@@ -203,12 +228,44 @@ export default function Dashboard() {
     return counts;
   }, [applications]);
 
+  // ── Extract Filters Data ──────────────────────────────────────────
+  const uniqueCities = useMemo(() => {
+    const cities = new Set();
+    applications.forEach(app => {
+      app.preferredCities?.forEach(c => c.name && cities.add(c.name));
+    });
+    return Array.from(cities).sort();
+  }, [applications]);
+
+  const uniqueMonths = useMemo(() => {
+    const months = new Set();
+    applications.forEach(app => {
+      const from = app.preferredDateRange?.from;
+      if (from) {
+        const d = new Date(from);
+        if (!isNaN(d.getTime())) {
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          months.add(key);
+        }
+      }
+    });
+    return Array.from(months).sort().reverse();
+  }, [applications]);
+
+  const formatMonth = (key) => {
+    const [y, m] = key.split('-');
+    const date = new Date(y, m - 1);
+    return date.toLocaleString('ar-SA', { month: 'long', year: 'numeric' });
+  };
+
   const clearFilters = () => {
     setActiveFilterKey("all");
     setSearchQuery("");
+    setSelectedCity("");
+    setSelectedMonth("");
   };
 
-  const hasActiveFilters = activeFilterKey !== "all" || searchQuery.trim() !== "";
+  const hasActiveFilters = activeFilterKey !== "all" || searchQuery.trim() !== "" || selectedCity !== "" || selectedMonth !== "";
 
   return (
     <div className="min-h-screen bg-paper pb-20 px-4 md:px-8">
@@ -251,34 +308,62 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Quick Filter Tabs (Segmented Control Style) ─────────────────────────────── */}
-        <div className="flex overflow-x-auto filter-tabs pb-2 -mb-2">
-          <div className="inline-flex gap-1 p-1 bg-gray-100/70 rounded-xl border border-gray-200/50 shadow-inner w-max">
-            {STATE_FILTER_GROUPS.map((group) => {
-              const Icon = FILTER_TAB_ICONS[group.icon] || LayoutGrid;
-              const isActive = activeFilterKey === group.key;
-              const count = groupCounts[group.key] ?? 0;
-              return (
-                <button
-                  key={group.key}
-                  onClick={() => setActiveFilterKey(group.key)}
-                  className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all duration-300 shrink-0 ${
-                    isActive
-                      ? "bg-white text-ink shadow-[0_2px_8px_rgb(0,0,0,0.08)] ring-1 ring-black/5"
-                      : "text-gray-500 hover:text-ink hover:bg-gray-50/50"
-                  }`}
-                >
-                  <Icon size={15} className={isActive ? "text-cyan" : "opacity-60"} />
-                  {group.label}
-                  <span className={`tabular-nums text-[11px] font-black px-1.5 py-0.5 rounded-md transition-colors ${
-                    isActive ? "bg-cyan/10 text-cyan-dark" : "bg-gray-200/50 text-gray-500 group-hover:bg-gray-200"
-                  }`}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
+        {/* ── Quick Filter Tabs & Dropdowns ─────────────────────────────── */}
+        <div className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center pb-2 -mb-2">
+          
+          <div className="flex overflow-x-auto filter-tabs w-full xl:w-auto">
+            <div className="inline-flex gap-1 p-1 bg-gray-100/70 rounded-xl border border-gray-200/50 shadow-inner w-max">
+              {STATE_FILTER_GROUPS.map((group) => {
+                const Icon = FILTER_TAB_ICONS[group.icon] || LayoutGrid;
+                const isActive = activeFilterKey === group.key;
+                const count = groupCounts[group.key] ?? 0;
+                return (
+                  <button
+                    key={group.key}
+                    onClick={() => setActiveFilterKey(group.key)}
+                    className={`relative z-10 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all duration-300 shrink-0 ${
+                      isActive
+                        ? "bg-white text-ink shadow-[0_2px_8px_rgb(0,0,0,0.08)] ring-1 ring-black/5"
+                        : "text-gray-500 hover:text-ink hover:bg-gray-50/50"
+                    }`}
+                  >
+                    <Icon size={15} className={isActive ? "text-cyan" : "opacity-60"} />
+                    {group.label}
+                    <span className={`tabular-nums text-[11px] font-black px-1.5 py-0.5 rounded-md transition-colors ${
+                      isActive ? "bg-cyan/10 text-cyan-dark" : "bg-gray-200/50 text-gray-500 group-hover:bg-gray-200"
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+            <select
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm font-bold text-gray-700 outline-none focus:border-cyan focus:ring-2 focus:ring-cyan/20 transition-all cursor-pointer"
+            >
+              <option value="">كل المدن</option>
+              {uniqueCities.map(city => (
+                <option key={city} value={city}>{city}</option>
+              ))}
+            </select>
+            
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm font-bold text-gray-700 outline-none focus:border-cyan focus:ring-2 focus:ring-cyan/20 transition-all cursor-pointer"
+            >
+              <option value="">كل الفترات</option>
+              {uniqueMonths.map(month => (
+                <option key={month} value={month}>{formatMonth(month)}</option>
+              ))}
+            </select>
+          </div>
+
         </div>
 
         {/* ── Application List ──────────────────────────────────────── */}
