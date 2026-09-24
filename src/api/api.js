@@ -1,4 +1,5 @@
 import axios from "axios";
+import * as Sentry from "@sentry/react";
 import { getToken, clearToken } from "../lib/auth";
 import { API_ERROR_MESSAGES } from "../lib/constants";
 
@@ -72,6 +73,17 @@ api.interceptors.response.use(
       error.friendlyMessage =
         API_ERROR_MESSAGES[code] ||
         "تم إرسال عدد كبير من الطلبات. يرجى الانتظار قليلاً ثم المحاولة مرة أخرى.";
+    }
+
+    if (status >= 500) {
+      Sentry.captureException(error, {
+        extra: {
+          url: error.config?.url,
+          method: error.config?.method,
+          payload: error.config?.data,
+          response: payload,
+        }
+      });
     }
 
     return Promise.reject(error);
