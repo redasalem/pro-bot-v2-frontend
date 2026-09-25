@@ -28,6 +28,8 @@ export default function Login() {
     mutationFn: loginRequest,
     onSuccess: () => {
       // SEC-01 Fix: Backend now automatically sets HttpOnly JWT and logged_in cookies.
+      // We set a local flag because cross-domain cookies aren't readable via document.cookie.
+      localStorage.setItem("logged_in_flag", "true");
       window.location.href = "/dashboard";
     },
     onError: (err) => {

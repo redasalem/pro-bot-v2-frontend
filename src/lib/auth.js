@@ -5,10 +5,13 @@ export const clearToken = () => {
     // to clear both permutations here so the frontend properly recognizes the logout.
     document.cookie = 'logged_in=; Max-Age=0; path=/; secure; samesite=none';
     document.cookie = 'logged_in=; Max-Age=0; path=/; samesite=lax';
+    localStorage.removeItem('logged_in_flag');
 };
 
 export const isLoggedIn = () => {
-    // The JWT is HttpOnly, so we check for the presence of the non-HttpOnly 'logged_in' cookie
-    // that the backend sets alongside the JWT.
-    return document.cookie.split(';').some((item) => item.trim().startsWith('logged_in=true'));
+    // The JWT is HttpOnly, so we check for the presence of the non-HttpOnly 'logged_in' cookie.
+    // If the backend is on a different domain (Render), document.cookie won't work, so we fallback to a localStorage flag.
+    const hasCookie = document.cookie.split(';').some((item) => item.trim().startsWith('logged_in=true'));
+    const hasLocalFlag = localStorage.getItem('logged_in_flag') === 'true';
+    return hasCookie || hasLocalFlag;
 };
