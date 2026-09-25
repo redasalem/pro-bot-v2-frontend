@@ -1,6 +1,6 @@
 import axios from "axios";
 import * as Sentry from "@sentry/react";
-import { getToken, clearToken } from "../lib/auth";
+import { clearToken } from "../lib/auth";
 import { API_ERROR_MESSAGES } from "../lib/constants";
 
 const api = axios.create({
@@ -10,8 +10,8 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = getToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Authorization is now handled securely via HttpOnly cookies sent automatically
+  // because 'withCredentials: true' is enabled. No need to attach Bearer tokens.
   return config;
 });
 

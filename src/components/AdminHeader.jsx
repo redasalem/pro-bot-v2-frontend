@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Activity, ClipboardList, LogOut, RefreshCw, Shield, Search } from "lucide-react";
 import { clearToken } from "../lib/auth";
+import { logoutRequest } from "../api/auth";
 import { getTelemetryStatus, refreshTelemetry } from "../api/applications";
 
 export default function AdminHeader({ user, searchQuery, onSearchChange }) {
@@ -10,10 +11,16 @@ export default function AdminHeader({ user, searchQuery, onSearchChange }) {
   const queryClient = useQueryClient();
   const searchRef = useRef(null);
 
-  const logout = () => {
-    clearToken();
-    queryClient.clear();
-    navigate("/login", { replace: true });
+  const logout = async () => {
+    try {
+      await logoutRequest();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      clearToken();
+      queryClient.clear();
+      navigate("/login", { replace: true });
+    }
   };
 
   // ── Global Ctrl+K / ⌘K shortcut ─────────────────────────────────

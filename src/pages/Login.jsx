@@ -3,7 +3,7 @@ import { useNavigate, Navigate } from "react-router-dom";
 import { useMutation } from '@tanstack/react-query';
 import Toast from '../components/Toast';
 import { loginRequest } from './../api/auth';
-import { setToken, isLoggedIn } from '../lib/auth';
+import { isLoggedIn } from '../lib/auth';
 import { LogIn } from 'lucide-react';
 
 export default function Login() {
@@ -26,12 +26,9 @@ export default function Login() {
 
   const { mutate: login, isPending } = useMutation({
     mutationFn: loginRequest,
-    onSuccess: (data) => {
-      const token = data.accessToken;
-      if (token) {
-        setToken(token);
-        window.location.href = "/dashboard";
-      }
+    onSuccess: () => {
+      // SEC-01 Fix: Backend now automatically sets HttpOnly JWT and logged_in cookies.
+      window.location.href = "/dashboard";
     },
     onError: (err) => {
       const message =
