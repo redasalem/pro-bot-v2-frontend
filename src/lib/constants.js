@@ -1,5 +1,3 @@
-export const TOKEN_KEY = "token";
-
 export const STATE_LABELS = {
   draft: "مسودة",
   awaiting_service_payment: "بانتظار دفع الخدمة",

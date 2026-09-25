@@ -180,7 +180,7 @@ export default function Dashboard() {
   });
 
   const pollInterval = useMemo(() => {
-    if (applications.some(isRunning)) return 3000;
+    if (applications.some(isRunning)) return 10000;
     if (applications.some((app) => app.automation?.state === "manual_payment_required")) return 30000;
     return false;
   }, [applications]);
