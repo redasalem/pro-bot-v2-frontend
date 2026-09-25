@@ -9,16 +9,8 @@ const api = axios.create({
   timeout: 20000, // 20s — covers Render cold-start spin-up
 });
 
-api.interceptors.request.use((config) => {
-  // Authorization is handled securely via HttpOnly cookies by default,
-  // but for cross-domain environments where third-party cookies are blocked,
-  // we fallback to attaching the Bearer token.
-  const token = localStorage.getItem("access_token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// Authorization is handled securely via HttpOnly cookies by default
+// withCredentials is set to true on the instance.
 
 // ── Retry interceptor (cold-start resilience) ─────────────────────────
 // Automatically retries once after a 3 s delay on network errors or
@@ -30,10 +22,12 @@ api.interceptors.response.use(null, async (error) => {
   const isRetryable = !error.response && 
     (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK" || !error.code) &&
     config.method?.toLowerCase() === "get";
-  if (isRetryable && !config.__retried) {
-    config.__retried = true;
+    
+  if (isRetryable && !config.headers["X-Retried"]) {
+    const newConfig = { ...config };
+    newConfig.headers = { ...newConfig.headers, "X-Retried": "true" };
     await new Promise((r) => setTimeout(r, 3000));
-    return api(config);
+    return api(newConfig);
   }
 
   return Promise.reject(error);
