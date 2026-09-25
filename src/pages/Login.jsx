@@ -22,7 +22,7 @@ export default function Login() {
   const [passwordTouched, setPasswordTouched] = useState(false);
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const isPasswordValid = password.length >= 6;
+  const isPasswordValid = /^(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/.test(password);
 
   const { mutate: login, isPending } = useMutation({
     mutationFn: loginRequest,
@@ -121,7 +121,7 @@ export default function Login() {
                   }`}
                 />
                 {passwordTouched && !isPasswordValid && (
-                  <span className="text-xs text-red-500">كلمة المرور يجب أن تكون 6 أحرف على الأقل</span>
+                  <span className="text-xs text-red-500">كلمة المرور يجب أن تكون 8 أحرف على الأقل وتحتوي على حرف كبير ورقم ورمز خاص</span>
                 )}
               </label>
 
