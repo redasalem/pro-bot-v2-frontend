@@ -26,10 +26,13 @@ export default function Login() {
 
   const { mutate: login, isPending } = useMutation({
     mutationFn: loginRequest,
-    onSuccess: () => {
+    onSuccess: (data) => {
       // SEC-01 Fix: Backend now automatically sets HttpOnly JWT and logged_in cookies.
       // We set a local flag because cross-domain cookies aren't readable via document.cookie.
       localStorage.setItem("logged_in_flag", "true");
+      if (data?.accessToken) {
+          localStorage.setItem("access_token", data.accessToken);
+      }
       window.location.href = "/dashboard";
     },
     onError: (err) => {

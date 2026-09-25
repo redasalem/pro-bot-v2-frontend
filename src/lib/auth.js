@@ -6,6 +6,7 @@ export const clearToken = () => {
     document.cookie = 'logged_in=; Max-Age=0; path=/; secure; samesite=none';
     document.cookie = 'logged_in=; Max-Age=0; path=/; samesite=lax';
     localStorage.removeItem('logged_in_flag');
+    localStorage.removeItem('access_token');
 };
 
 export const isLoggedIn = () => {

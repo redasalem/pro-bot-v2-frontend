@@ -10,8 +10,13 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  // Authorization is now handled securely via HttpOnly cookies sent automatically
-  // because 'withCredentials: true' is enabled. No need to attach Bearer tokens.
+  // Authorization is handled securely via HttpOnly cookies by default,
+  // but for cross-domain environments where third-party cookies are blocked,
+  // we fallback to attaching the Bearer token.
+  const token = localStorage.getItem("access_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
