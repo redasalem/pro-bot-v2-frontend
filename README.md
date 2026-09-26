@@ -5,6 +5,7 @@
 ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=Cloudflare&logoColor=white)
 ![Render](https://img.shields.io/badge/Render-%46E3B7.svg?style=for-the-badge&logo=render&logoColor=white)
+![Sentry](https://img.shields.io/badge/sentry-%23362D59.svg?style=for-the-badge&logo=sentry&logoColor=white)
 
 PRO-BOT V2 is an advanced, automated booking and notification system tailored for scheduling, built with a modern React frontend and a powerful Express/Node.js backend. 
 
@@ -22,6 +23,7 @@ PRO-BOT V2 is an advanced, automated booking and notification system tailored fo
 - **State Management / Fetching:** TanStack React Query + Axios
 - **Routing:** React Router v7
 - **Icons:** Lucide React
+- **Error Tracking:** Sentry
 
 ### Backend (API)
 - **Runtime:** Node.js + Express.js
