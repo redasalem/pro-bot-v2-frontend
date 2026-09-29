@@ -90,6 +90,15 @@ const getOperationalStatus = ({
     selectedSlotPassed,
     errorMessage,
 }) => {
+    if (state === "cancelled") {
+        return { tone: "neutral", title: "تم إلغاء الطلب", description: "ألغي هذا الطلب ولن يستكمل البوت العمل عليه.", next: "لا توجد خطوة مطلوبة." };
+    }
+    if (state === "failed") {
+        return { tone: "error", title: "تعذر تنفيذ الطلب", description: errorMessage || "توقف الطلب بسبب خطأ غير قابل للمعالجة التلقائية.", next: "راجع سبب الخطأ وأعد المحاولة." };
+    }
+    if (state === "manual_review") {
+        return { tone: "warning", title: "الطلب يحتاج مراجعة يدوية", description: errorMessage || "توقفت خطوة سابقة ولم يستطع البوت استكمالها تلقائيًا.", next: "راجع بيانات الأهلية." };
+    }
     if (state === "expired") {
         const submittedExpired = automation.lastError?.code === "SALLA_SEARCH_PERIOD_EXPIRED";
         return {
@@ -168,15 +177,7 @@ const getOperationalStatus = ({
     if (state === "ready") {
         return { tone: "running", title: "الطلب جاهز لبدء Prometric", description: "تم دفع الخدمة وسيبدأ التحقق من الأهلية.", next: "لا يلزم تدخل الآن." };
     }
-    if (state === "manual_review") {
-        return { tone: "warning", title: "الطلب يحتاج مراجعة يدوية", description: errorMessage || "توقفت خطوة سابقة ولم يستطع البوت استكمالها تلقائيًا.", next: "راجع بيانات الأهلية." };
-    }
-    if (state === "failed") {
-        return { tone: "error", title: "تعذر تنفيذ الطلب", description: errorMessage || "توقف الطلب بسبب خطأ غير قابل للمعالجة التلقائية.", next: "راجع سبب الخطأ وأعد المحاولة." };
-    }
-    if (state === "cancelled") {
-        return { tone: "neutral", title: "تم إلغاء الطلب", description: "ألغي هذا الطلب ولن يستكمل البوت العمل عليه.", next: "لا توجد خطوة مطلوبة." };
-    }
+
     if (state === "draft") {
         return { tone: "neutral", title: "الطلب مسودة", description: "تم إنشاء الطلب ولم يُرسل للمعالجة بعد.", next: "يلزم سداد رسوم الخدمة لبدء التشغيل." };
     }
