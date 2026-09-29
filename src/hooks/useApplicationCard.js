@@ -127,7 +127,7 @@ const getOperationalStatus = ({
             tone: "running",
             title: "تجهيز الاتصال بـ Prometric",
             description: "البوت يجهز متطلبات الحماية والـ Telemetry للاتصال.",
-            next: automation.nextAttemptAt ? "سيكتمل الاتصال في " + formatDate(automation.nextAttemptAt) : "لا يلزم تدخل الآن.",
+            next: automation.nextAttemptAt ? "ستبدأ المحاولة القادمة في " + formatDate(automation.nextAttemptAt) : "لا يلزم تدخل الآن.",
         };
     }
     if (automation.lastError?.code) {
@@ -172,7 +172,13 @@ const getOperationalStatus = ({
         return { tone: "success", title: "نجح التحقق من الأهلية", description: "الطلب جاهز للبحث التلقائي عن موعد.", next: "سيبدأ البحث تلقائيًا." };
     }
     if (state === "validating_eligibility") {
-        return { tone: "running", title: "جارٍ التحقق من الأهلية", description: "أرسل البوت البيانات إلى Prometric.", next: "لا يلزم تدخل الآن." };
+        if (automation.activeJobId) {
+            return { tone: "running", title: "جارٍ التحقق من الأهلية", description: "بدأ العامل في فحص البيانات مع Prometric.", next: "لا يلزم تدخل الآن." };
+        } else if (automation.nextAttemptAt) {
+            return { tone: "running", title: "في الطابور لفحص الأهلية", description: "المحاولة القادمة مجدولة.", next: "ستبدأ المحاولة في " + formatDate(automation.nextAttemptAt) };
+        } else {
+            return { tone: "running", title: "في الطابور لفحص الأهلية", description: "الطلب مسجل وينتظر دور التنفيذ.", next: "سيبدأ العامل قريباً." };
+        }
     }
     if (state === "ready") {
         return { tone: "running", title: "الطلب جاهز لبدء Prometric", description: "تم دفع الخدمة وسيبدأ التحقق من الأهلية.", next: "لا يلزم تدخل الآن." };
