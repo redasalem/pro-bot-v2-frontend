@@ -51,12 +51,13 @@ export default function AdminHeader({ user, searchQuery, onSearchChange }) {
   });
 
   const poolCount = telemetry?.usable ?? null;
+  const poolTarget = Math.max(1, Number(telemetry?.targetSize) || 3);
   const isRefilling = telemetry?.refilling ?? false;
 
   // ── Telemetry theme (green / amber / red / gray) ─────────────────
   let poolTheme = { wrapper: "bg-gray-50 text-gray-500 ring-1 ring-gray-200", dot: "bg-gray-400", label: "Telemetry Pool" };
   if (poolCount !== null) {
-    if (poolCount >= 3) poolTheme = { wrapper: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20", dot: "bg-emerald-500", label: "Active" };
+    if (poolCount >= poolTarget) poolTheme = { wrapper: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20", dot: "bg-emerald-500", label: "Active" };
     else if (poolCount >= 1) poolTheme = { wrapper: "bg-amber-50 text-amber-700 ring-1 ring-amber-600/20", dot: "bg-amber-500", label: "Low" };
     else poolTheme = { wrapper: "bg-red-50 text-red-700 ring-1 ring-red-600/20", dot: "bg-red-500", label: "Depleted" };
   }

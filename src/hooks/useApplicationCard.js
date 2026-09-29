@@ -1,7 +1,9 @@
+import { CHECKOUT_FLOW_AVAILABLE } from "../lib/checkoutReadiness";
+import { acknowledgeUnpaidCheckout } from "../api/applications";
 import { useState, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { 
+import {
     createPaymentSession,
     triggerEligibilityCheck,
     restartSearch,
@@ -97,7 +99,7 @@ const getOperationalStatus = ({
         return { tone: "error", title: "تعذر تنفيذ الطلب", description: errorMessage || "توقف الطلب بسبب خطأ غير قابل للمعالجة التلقائية.", next: "راجع سبب الخطأ وأعد المحاولة." };
     }
     if (state === "manual_review") {
-        return { tone: "warning", title: "الطلب يحتاج مراجعة يدوية", description: errorMessage || "توقفت خطوة سابقة ولم يستطع البوت استكمالها تلقائيًا.", next: "راجع بيانات الأهلية." };
+        return { tone: "warning", title: "الطلب يحتاج مراجعة يدوية", description: errorMessage || "توقفت خطوة سابقة ولم يستطع البوت استكمالها تلقائيًا.", next: automation.paymentOrchestratorId ? "تحقق من نتيجة الدفع والحجز لدى برومترك قبل أي محاولة جديدة." : "راجع سبب التوقف." };
     }
     if (state === "expired") {
         const submittedExpired = automation.lastError?.code === "SALLA_SEARCH_PERIOD_EXPIRED";
@@ -220,11 +222,11 @@ export function useApplicationCard(application, currentTime) {
             && Number.isFinite(currentTime)
             && selectedStartsAt <= currentTime;
         const checkoutExpired = Boolean(checkoutUrl && checkoutExpiresAt && currentTime && new Date(checkoutExpiresAt).getTime() <= currentTime);
-        const hasActiveLink = Boolean(checkoutUrl) && !checkoutExpired && !selectedSlotPassed;
+        const hasActiveLink = CHECKOUT_FLOW_AVAILABLE && state === "manual_payment_required" && Boolean(checkoutUrl) && !checkoutExpired && !selectedSlotPassed;
 
         const feeAmount = Number(automation.prometricFeeAmount);
         const feeCurrency = automation.prometricFeeCurrency;
-        const hasFee = Number.isFinite(feeAmount) && Boolean(feeCurrency);
+        const hasFee = automation.prometricFeeAmount != null && Number.isFinite(feeAmount) && Boolean(feeCurrency);
         const errorCode = automation.lastError?.code;
         const errorMessage = errorCode
             ? API_ERROR_MESSAGES[errorCode] || automation.lastError?.message
@@ -249,7 +251,7 @@ export function useApplicationCard(application, currentTime) {
             { label: "التأكيد", done: confirmationDone, Icon: Check },
         ];
         const firstPendingIndex = workflowSteps.findIndex((step) => !step.done);
-        const showPaymentButton = state === "manual_payment_required" && !hasActiveLink && !selectedSlotPassed;
+        const showPaymentButton = CHECKOUT_FLOW_AVAILABLE && state === "manual_payment_required" && !hasActiveLink && !selectedSlotPassed;
         const orderNumber = application.externalOrder?.orderId;
         const cities = application.preferredCities?.map((city) => city.name).filter(Boolean) || [];
 
@@ -302,6 +304,8 @@ export function useApplicationCard(application, currentTime) {
         mutationFn: () => createPaymentSession(application._id),
         onSuccess: invalidateAll,
     });
+
+    const acknowledgeUnpaid = useMutation({ mutationFn: () => acknowledgeUnpaidCheckout(application._id), onSuccess: invalidateAll });
 
     const eligibilityCheck = useMutation({
         mutationFn: () => triggerEligibilityCheck(application._id),
@@ -382,6 +386,7 @@ export function useApplicationCard(application, currentTime) {
 
     const mutations = useMemo(() => ({
         paymentSession,
+        acknowledgeUnpaid,
         eligibilityCheck,
         searchRestart,
         appCancel,
@@ -392,7 +397,7 @@ export function useApplicationCard(application, currentTime) {
         pauseBot,
         resumeBot,
     }), [
-        paymentSession, eligibilityCheck, searchRestart, appCancel, 
+        paymentSession, acknowledgeUnpaid, eligibilityCheck, searchRestart, appCancel,
         appDelete, manualConfirm, forceTransition, payStatus, pauseBot, resumeBot
     ]);
 

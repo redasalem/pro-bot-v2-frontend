@@ -1,7 +1,6 @@
-import React from 'react';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 
-export default function FallbackComponent({ error, resetError }) {
+export default function FallbackComponent({ resetError }) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center border border-gray-100">
@@ -26,3 +25,4 @@ export default function FallbackComponent({ error, resetError }) {
     </div>
   );
 }
+

@@ -1,3 +1,4 @@
+import { CHECKOUT_FLOW_AVAILABLE } from "../../lib/checkoutReadiness";
 import React from "react";
 import { CopyButton } from "./CopyButton";
 import { PAYMENT_LABELS } from "../../hooks/useApplicationCard";
@@ -84,6 +85,13 @@ export const ApplicationDetails = React.memo(({
             )}
 
             {/* ── Payment Action ───────────────────────────────────── */}
+            {!CHECKOUT_FLOW_AVAILABLE && ["manual_payment_required", "manual_review"].includes(data.state) && (
+                <section role="status" className="p-5 rounded-2xl border border-amber-200 bg-amber-50 text-amber-900">
+                    <strong>الدفع الآلي متوقف مؤقتًا حتى اكتمال ربطه بالحجز</strong>
+                    <p className="text-sm mt-2">إذا دفعت أو ظهر مبلغ محجوز، فلا تكرر الدفع. احتفظ بمرجع العملية وتحقق من برومترك. لا يُؤكَّد الحجز إلا برقم تأكيد صادر من برومترك.</p>
+                </section>
+            )}
+
             {!selectedSlotPassed && (hasActiveLink || checkoutExpired || showPaymentButton) && (
                 <section className={`flex flex-col md:flex-row items-center justify-between gap-5 p-5 rounded-2xl border ${hasActiveLink ? "bg-indigo-50 border-indigo-200" : "bg-amber-50 border-amber-200"}`}>
                     <div className="flex flex-col gap-1 w-full">
@@ -155,3 +163,4 @@ export const ApplicationDetails = React.memo(({
         </>
     );
 });
+

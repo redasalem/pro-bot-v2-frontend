@@ -1,3 +1,4 @@
+import { CHECKOUT_FLOW_AVAILABLE } from "../lib/checkoutReadiness";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -31,7 +32,7 @@ const isRunning = (app) => {
   if (automation.activeJobId) return true;
   if (automation.lastError?.code && !RETRYABLE_SEARCH_CODES.includes(automation.lastError.code) && automation.lastError?.code !== "PROMETRIC_TELEMETRY_UNAVAILABLE") return false;
   if (ACTIVE_AUTOMATION_STATES.includes(automation.state)) return true;
-  return automation.state === "manual_payment_required" && !automation.prometricCheckoutUrl;
+  return CHECKOUT_FLOW_AVAILABLE && automation.state === "manual_payment_required" && !automation.prometricCheckoutUrl;
 };
 
 const FILTER_TAB_ICONS = {
@@ -178,13 +179,13 @@ export default function Dashboard() {
   } = useQuery({
     queryKey: ["applications"],
     queryFn: getAllApplications,
-    refetchInterval: false,
+    refetchInterval: 30000,
   });
 
   const pollInterval = useMemo(() => {
     if (applications.some(isRunning)) return 10000;
     if (applications.some((app) => app.automation?.state === "manual_payment_required")) return 30000;
-    return false;
+    return 30000;
   }, [applications]);
 
   const { data: activeStatuses } = useQuery({
@@ -247,7 +248,7 @@ export default function Dashboard() {
     ["البوت يعمل الآن", applications.filter(isRunning).length],
     ["رابط دفع جاهز", applications.filter((app) => {
       const automation = app.automation || {};
-      if (!automation.prometricCheckoutUrl) return false;
+      if (!CHECKOUT_FLOW_AVAILABLE || automation.state !== "manual_payment_required" || !automation.prometricCheckoutUrl) return false;
       const selectedStartsAt = Date.parse(automation.selectedSlot?.startsAt);
       if (Number.isFinite(selectedStartsAt) && selectedStartsAt <= dataUpdatedAt) return false;
       if (!automation.checkoutSessionExpirationUtc) return true;
@@ -535,3 +536,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

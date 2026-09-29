@@ -21,6 +21,15 @@ export const STATE_LABELS = {
 };
 
 export const API_ERROR_MESSAGES = {
+    PROMETRIC_CHECKOUT_FLOW_INCOMPLETE: "إنشاء رابط الدفع متوقف مؤقتًا: ربط الموعد بالدفع وإصدار التأكيد لم يُستكملا بعد. لا تعد الدفع لعملية سابقة.",
+    PAYMENT_DETECTED_AWAITING_CONFIRMATION: "رُصد نجاح الدفع، لكن الحجز لم يُؤكَّد بعد. تحقق من برومترك وأدخل رقم تأكيد الحجز.",
+    PAYMENT_RECONCILIATION_REQUIRED: "تحقق من نتيجة الدفع في برومترك قبل إعادة المحاولة. بيانات الموعد محفوظة.",
+    PAYMENT_ALREADY_RECORDED: "الدفع مسجل. أدخل رقم تأكيد الحجز.",
+    BOOKING_JOB_ALREADY_ACTIVE: "توجد عملية قيد التنفيذ. انتظر انتهائها ثم أعد المحاولة.",
+    CANDIDATE_PHONE_INVALID: "رقم الجوال غير صحيح. أدخله مع رمز الدولة.",
+    CANDIDATE_PHONE_MISSING: "رقم الجوال ورقم المتجر البديل غير متوفرين.",
+    JOB_TIMEOUT_EXCEEDED: "توقفت المهمة بعد انتهاء المهلة. راجع نتيجة برومترك قبل إعادة التشغيل.",
+    BOOKING_LOCK_LOST: "توقفت المهمة بسبب فقدان قفل التنفيذ. راجع نتيجة برومترك قبل إعادة التشغيل.",
   PROMETRIC_ELIGIBILITY_NOT_FOUND:
     "لم يتم العثور على أحقية مطابقة. راجع الرقم وأول 4 أحرف من اسم العائلة.",
   PROMETRIC_ELIGIBILITY_EXAM_MISMATCH:
@@ -34,6 +43,8 @@ export const API_ERROR_MESSAGES = {
   PROMETRIC_SLOTS_AUTH_REJECTED:
     "تم جلب المراكز بنجاح، لكن Prometric رفض توكن المصادقة الخاص بجلب أوقات المواعيد (slots). يلزم توكن دائم صالح لهذا الـ API.",
   PROMETRIC_SESSION_START_FAILED: "تعذر بدء جلسة Prometric الخاصة بهذا الحجز.",
+  PROMETRIC_SESSION_ACQUISITION_FAILED:
+    "تعذر توفير اعتماد صالح للاتصال بـPrometric. يجب تصحيح المصادقة قبل إعادة تشغيل الطلب؛ هذا لا يعني أن رقم الأحقية خاطئ.",
   PROMETRIC_SESSION_RESPONSE_UNRECOGNIZED:
     "لم تُرجع صفحة Prometric رقم Session صالحًا لبدء الحجز.",
   PROMETRIC_BOOKING_SESSION_MISSING:

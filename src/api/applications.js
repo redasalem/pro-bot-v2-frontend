@@ -79,6 +79,12 @@ export const pauseApplicationAutomation = async (id) => {
 
 // Resume automation for a single application (force back to searching)
 export const resumeApplicationAutomation = async (id) => {
-    const { data } = await api.post(`api/v1/booking-workflow/${id}/start-search`, {});
+    await api.post(`api/v1/booking-workflow/${id}/transition`, { state: "ready" });
+    const { data } = await api.post(`api/v1/booking-workflow/${id}/check-eligibility`, {});
     return data;
-};
+};
+
+export const acknowledgeUnpaidCheckout = async (id) => {
+    const { data } = await api.post(`api/v1/booking-workflow/${id}/acknowledge-unpaid`, { verifiedUnpaid: true });
+    return data;
+};

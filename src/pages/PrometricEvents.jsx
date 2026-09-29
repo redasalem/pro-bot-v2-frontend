@@ -57,6 +57,7 @@ const ERROR_HELP = {
   PROMETRIC_SLOTS_AUTH_REJECTED: { title: "Prometric رفض صلاحية البحث عن الساعات", action: "حدّث Akamai telemetry." },
   PROMETRIC_ELIGIBILITY_NOT_FOUND: { title: "بيانات الأهلية غير موجودة", action: "راجع رقم الأهلية وأول 4 حروف من اسم العائلة." },
   PROMETRIC_SESSION_START_FAILED: { title: "فشل بدء جلسة Prometric", action: "راجع وصول السيرفر إلى صفحة Prometric." },
+  PROMETRIC_SESSION_ACQUISITION_FAILED: { title: "اعتماد اتصال Prometric غير متوفر", action: "صحح مصدر المصادقة وتجديدها قبل إعادة التشغيل؛ الجلسة وحدها لا تثبت صلاحية اعتماد API." },
   PROMETRIC_SESSION_RESPONSE_UNRECOGNIZED: { title: "Prometric لم يرجع Session ID", action: "راجع استخراج Session ID في الباك إند." },
   PROMETRIC_SEARCH_HEADER_MISSING: { title: "بيانات حماية البحث ناقصة", action: "أضيف Akamai telemetry المطلوبة." },
   PROMETRIC_SLOTS_PREFLIGHT_FAILED: { title: "فشل تجهيز طلب الساعات", action: "راجع رد OPTIONS." },
@@ -283,13 +284,15 @@ export default function PrometricEvents() {
             </div>
           </div>
           <div className="flex flex-col gap-4 bg-gray-50 p-5 rounded-2xl border border-gray-100 min-w-[300px]">
-            <label className="flex items-center justify-between font-bold text-ink cursor-pointer">
-              تشغيل البحث الدوري
-              <div className={`w-12 h-6 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer transition-colors duration-300 ${schedulerForm.enabled ? 'bg-cyan' : ''}`}>
-                <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${schedulerForm.enabled ? '-translate-x-6' : ''}`}></div>
-                <input type="checkbox" className="hidden" checked={schedulerForm.enabled} onChange={(e) => setSchedulerDraft({ ...schedulerForm, enabled: e.target.checked })} />
-              </div>
-            </label>
+            <div className="flex items-center justify-between font-bold text-ink">
+              <span id="scheduler-enabled-label">تشغيل البحث الدوري</span>
+              <button type="button" role="switch" aria-checked={schedulerForm.enabled} aria-labelledby="scheduler-enabled-label"
+                onClick={() => setSchedulerDraft({ ...schedulerForm, enabled: !schedulerForm.enabled })}
+                dir="ltr"
+                className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan ${schedulerForm.enabled ? 'bg-cyan' : 'bg-gray-300'}`}>
+                <span className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${schedulerForm.enabled ? 'translate-x-6' : ''}`} />
+              </button>
+            </div>
             <label className="flex flex-col gap-2 text-sm font-bold text-gray-600">
               التكرار بالدقائق
               <input type="number" min="1" max="10080" value={schedulerForm.intervalMinutes} onChange={(e) => setSchedulerDraft({ ...schedulerForm, intervalMinutes: Number(e.target.value) })} className="px-3 py-2 rounded-xl border border-gray-200 outline-none focus:border-cyan focus:ring-4 focus:ring-cyan/10 transition-all bg-white" />

@@ -1,4 +1,3 @@
-import React from "react";
 import { useApplicationCard } from "../hooks/useApplicationCard";
 import { ApplicationHeader } from "./ApplicationCard/ApplicationHeader";
 import { ApplicationTimeline } from "./ApplicationCard/ApplicationTimeline";
@@ -11,34 +10,37 @@ export default function Applicationcard({ application, currentTime }) {
 
     return (
         <article className="group flex flex-col gap-6 p-7 bg-white border border-gray-100 rounded-[2rem] shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-400 relative overflow-hidden">
-            
+
             {/* Subtle left accent border instead of heavy right border */}
             <div className={`absolute top-0 bottom-0 left-0 w-1.5 ${data.theme.border.replace('border-r-', 'bg-')} opacity-70 group-hover:opacity-100 transition-opacity duration-300`} />
-            
-            <ApplicationHeader 
-                application={application} 
-                state={data.state} 
-                badgeClass={data.badgeClass} 
-                orderNumber={data.orderNumber} 
-                status={data.status} 
-                theme={data.theme} 
+
+            <ApplicationHeader
+                application={application}
+                state={data.state}
+                badgeClass={data.badgeClass}
+                orderNumber={data.orderNumber}
+                status={data.status}
+                theme={data.theme}
             />
 
-            <ApplicationTimeline 
-                workflowSteps={data.workflowSteps} 
-                firstPendingIndex={data.firstPendingIndex} 
-                errorCode={data.errorCode} 
+            <ApplicationTimeline
+                workflowSteps={data.workflowSteps}
+                firstPendingIndex={data.firstPendingIndex}
+                errorCode={data.errorCode}
             />
 
-            <ApplicationDetails 
-                application={application} 
-                data={data} 
+            <ApplicationDetails
+                application={application}
+                data={data}
                 timelineOpen={uiState.timelineOpen}
                 setTimelineOpen={uiState.setTimelineOpen}
                 paymentSession={mutations.paymentSession}
             />
 
-            <ApplicationActions 
+            <ApplicationActions
+                    locked={Boolean(application.automation?.activeJobId)}
+                    paymentReview={Boolean(["JOB_TIMEOUT_EXCEEDED", "BOOKING_LOCK_LOST", "PROMETRIC_RESCHEDULE_COMMIT_FAILED"].includes(application.automation?.lastError?.code) || application.automation?.paymentAttemptStartedAt || application.automation?.paymentOrchestratorId || application.automation?.prometricCheckoutUrl || application.automation?.paymentIntentId || application.prometricPayment?.status === "paid")}
+                    acknowledgeUnpaid={mutations.acknowledgeUnpaid}
                 state={data.state}
                 showConfirmForm={uiState.showConfirmForm}
                 setShowConfirmForm={uiState.setShowConfirmForm}
@@ -54,7 +56,7 @@ export default function Applicationcard({ application, currentTime }) {
                 appDelete={mutations.appDelete}
             />
 
-            <ApplicationForms 
+            <ApplicationForms
                 application={application}
                 state={data.state}
                 showConfirmForm={uiState.showConfirmForm}
@@ -69,7 +71,7 @@ export default function Applicationcard({ application, currentTime }) {
                 payStatus={mutations.payStatus}
             />
 
-            <ConfirmDialog 
+            <ConfirmDialog
                 confirmDialog={uiState.confirmDialog}
                 setConfirmDialog={uiState.setConfirmDialog}
             />

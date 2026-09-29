@@ -2,8 +2,8 @@ import React from "react";
 import './index.css'
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "sonner";
+import { QueryClient, QueryClientProvider, MutationCache } from "@tanstack/react-query";
+import { Toaster, toast } from "sonner";
 import * as Sentry from "@sentry/react";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -23,6 +23,7 @@ Sentry.init({
 });
 
 const queryClient = new QueryClient({
+  mutationCache: new MutationCache({ onError: (error) => toast.error(error.friendlyMessage || error.response?.data?.error?.message || "تعذر تنفيذ الإجراء. أعد المحاولة.") }),
   defaultOptions: {
     queries: { retry: 1, refetchOnWindowFocus: false },
   },
@@ -59,3 +60,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     </Sentry.ErrorBoundary>
   </React.StrictMode>
 );
+

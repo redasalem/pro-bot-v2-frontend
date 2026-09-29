@@ -21,7 +21,7 @@ api.interceptors.response.use(null, async (error) => {
   // Only retry on network errors or timeouts, and only once, and only for GET requests
   const isRetryable = !error.response && 
     (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK" || !error.code) &&
-    config.method?.toLowerCase() === "get";
+    config?.method?.toLowerCase() === "get";
     
   if (isRetryable && !config.headers["X-Retried"]) {
     const newConfig = { ...config };
@@ -79,8 +79,8 @@ api.interceptors.response.use(
         extra: {
           url: error.config?.url,
           method: error.config?.method,
-          payload: error.config?.data,
-          response: payload,
+          code,
+          status,
         }
       });
     }

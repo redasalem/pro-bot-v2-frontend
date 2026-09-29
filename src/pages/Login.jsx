@@ -37,8 +37,10 @@ export default function Login() {
     },
     onError: (err) => {
       const message =
+        err.friendlyMessage ||
+        err.response?.data?.error?.message ||
         err.response?.data?.message ||
-        "البريد الإلكتروني أو كلمة المرور غير صحيحة";
+        "تعذر تسجيل الدخول. أعد المحاولة.";
 
       setToast({
         isOpen: true,
