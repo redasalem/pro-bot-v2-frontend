@@ -27,6 +27,7 @@ import AdminHeader from "../components/AdminHeader";
 // ── Helpers ────────────────────────────────────────────────────────────
 const isRunning = (app) => {
   const automation = app.automation || {};
+  if (automation.nextAttemptAt && new Date(automation.nextAttemptAt) > new Date()) return true;
   if (automation.lastError?.code && !RETRYABLE_SEARCH_CODES.includes(automation.lastError.code)) return false;
   if (ACTIVE_AUTOMATION_STATES.includes(automation.state)) return true;
   return automation.state === "manual_payment_required" && !automation.prometricCheckoutUrl;

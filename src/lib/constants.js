@@ -84,6 +84,9 @@ export const RETRYABLE_SEARCH_CODES = [
 ];
 
 export const ACTIVE_AUTOMATION_STATES = [
+  "ready",
+  "validating_eligibility",
+  "eligibility_verified",
   "searching",
   "reschedule_searching",
   "awaiting_admin_slot_lookup",

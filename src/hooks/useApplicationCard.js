@@ -113,6 +113,14 @@ const getOperationalStatus = ({
             next: "سيعيد البوت البحث تلقائيًا في الجولة التالية.",
         };
     }
+    if (automation.lastError?.code === "PROMETRIC_TELEMETRY_UNAVAILABLE") {
+        return {
+            tone: "running",
+            title: "تجهيز الاتصال بـ Prometric",
+            description: "البوت يجهز متطلبات الحماية والـ Telemetry للاتصال.",
+            next: automation.nextAttemptAt ? "سيكتمل الاتصال في " + formatDate(automation.nextAttemptAt) : "لا يلزم تدخل الآن.",
+        };
+    }
     if (automation.lastError?.code) {
         return {
             tone: "error",
