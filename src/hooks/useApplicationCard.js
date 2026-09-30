@@ -1,7 +1,7 @@
-import { CHECKOUT_FLOW_AVAILABLE } from "../lib/checkoutReadiness";
-import { acknowledgeUnpaidCheckout } from "../api/applications";
+import { CHECKOUT_FLOW_AVAILABLE, hasPaymentEvidence } from "../lib/checkoutReadiness";
+import { acknowledgeUnpaidCheckout, getWorkflowMetadata, reconcilePayment } from "../api/applications";
 import { useState, useMemo } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
     createPaymentSession,
@@ -150,13 +150,13 @@ const getOperationalStatus = ({
         return { tone: "payment", title: "رابط دفع Prometric جاهز", description: "تم إنشاء جلسة الدفع بنجاح.", next: "افتح الرابط وأكمل الرسوم قبل الانتهاء." };
     }
     if (checkoutExpired) {
-        return { tone: "warning", title: "رابط دفع Prometric منتهي", description: "تم إنشاء الرابط وانتهت صلاحيته.", next: "أنشئ رابط جديد من الزر أدناه." };
+        return { tone: "warning", title: "رابط دفع Prometric منتهي", description: "تم إنشاء الرابط وانتهت صلاحيته.", next: "تحقق من نتيجة الدفع قبل أي محاولة جديدة." };
     }
     if (state === "manual_payment_required") {
-        return { tone: "warning", title: "الموعد محفوظ بلا رابط دفع", description: "لا يوجد Checkout URL صالح حتى الآن.", next: "انتظر التشغيل التلقائي أو أنشئه يدويًا." };
+        return { tone: "warning", title: "موعد مبدئي؛ الحجز لم يكتمل", description: "اختيار الموعد لا يحجز المقعد. الدفع التلقائي متوقف لحين اكتمال مسار الحجز.", next: "راجع الموعد والحجز في Prometric." };
     }
     if (state === "slot_selected") {
-        return { tone: "success", title: "تم اختيار الموعد", description: "اختار البوت أقرب موعد وينتقل لإعداد الدفع.", next: "سيبدأ إنشاء رابط الدفع تلقائيًا." };
+        return { tone: "success", title: "تم اختيار موعد مبدئي", description: "المقعد غير مؤكد لدى Prometric.", next: "الدفع التلقائي غير متاح حاليًا." };
     }
     if (state === "awaiting_admin_slot_selection") {
         return { tone: "running", title: "تم العثور على مواعيد", description: "يختار البوت أقرب موعد مطابق.", next: "لا يلزم تدخل طالما لا توجد رسالة خطأ." };
@@ -197,6 +197,8 @@ const getOperationalStatus = ({
 
 export function useApplicationCard(application, currentTime) {
     const queryClient = useQueryClient();
+    const { data: metadata } = useQuery({ queryKey: ["workflow-metadata"], queryFn: getWorkflowMetadata, staleTime: 60000 });
+    const canCheckout = CHECKOUT_FLOW_AVAILABLE && metadata?.checkout?.canCreateCheckout === true;
 
     // Local UI states (moved from component to hook)
     const [showConfirmForm, setShowConfirmForm] = useState(false);
@@ -222,7 +224,7 @@ export function useApplicationCard(application, currentTime) {
             && Number.isFinite(currentTime)
             && selectedStartsAt <= currentTime;
         const checkoutExpired = Boolean(checkoutUrl && checkoutExpiresAt && currentTime && new Date(checkoutExpiresAt).getTime() <= currentTime);
-        const hasActiveLink = CHECKOUT_FLOW_AVAILABLE && state === "manual_payment_required" && Boolean(checkoutUrl) && !checkoutExpired && !selectedSlotPassed;
+        const hasActiveLink = canCheckout && state === "manual_payment_required" && Boolean(checkoutUrl) && !checkoutExpired && !selectedSlotPassed;
 
         const feeAmount = Number(automation.prometricFeeAmount);
         const feeCurrency = automation.prometricFeeCurrency;
@@ -232,14 +234,18 @@ export function useApplicationCard(application, currentTime) {
             ? API_ERROR_MESSAGES[errorCode] || automation.lastError?.message
             : automation.lastError?.message || null;
 
-        const status = getOperationalStatus({ state, automation, hasActiveLink, checkoutExpired, selectedSlotPassed, errorMessage });
+        const paymentReview = hasPaymentEvidence(application);
+        const status = paymentReview && !["confirmed", "rescheduled"].includes(state)
+            ? { tone: "warning", title: application.prometricPayment?.status === "paid" ? "تم رصد الدفع والحجز يحتاج تحقق" : "نتيجة العملية تحتاج مراجعة",
+                description: "الموعد المختار ورابط الدفع لا يثبتان اكتمال الحجز في Prometric.", next: "لا تدفع مرة أخرى. افحص نتيجة العملية وطابق رقم التأكيد." }
+            : getOperationalStatus({ state, automation, hasActiveLink, checkoutExpired, selectedSlotPassed, errorMessage });
         const theme = TONE_STYLES[status.tone] || TONE_STYLES.neutral;
         const badgeClass = STATE_BADGE[state] || STATE_BADGE.draft;
 
         const eligibilityDone = hasReachedEligibility(automation, state);
         const centersDone = availableSitesCount > 0 || ["fetching_slots", "awaiting_admin_slot_selection", "slot_selected", "manual_payment_required", "booking", "confirmed", "rescheduled"].includes(state);
         const slotDone = Boolean(selected.slotId);
-        const paymentLinkDone = hasActiveLink;
+        const paymentLinkDone = application.prometricPayment?.status === "paid";
         const confirmationDone = ["confirmed", "rescheduled"].includes(state);
 
         const workflowSteps = [
@@ -251,7 +257,7 @@ export function useApplicationCard(application, currentTime) {
             { label: "التأكيد", done: confirmationDone, Icon: Check },
         ];
         const firstPendingIndex = workflowSteps.findIndex((step) => !step.done);
-        const showPaymentButton = CHECKOUT_FLOW_AVAILABLE && state === "manual_payment_required" && !hasActiveLink && !selectedSlotPassed;
+        const showPaymentButton = canCheckout && state === "manual_payment_required" && !hasActiveLink && !selectedSlotPassed;
         const orderNumber = application.externalOrder?.orderId;
         const cities = application.preferredCities?.map((city) => city.name).filter(Boolean) || [];
 
@@ -266,6 +272,8 @@ export function useApplicationCard(application, currentTime) {
         ].filter(Boolean);
 
         return {
+            paymentReview,
+            allowedTransitions: (metadata?.transitions?.[state] || []).filter(next => !["booking", "confirmed", "rescheduled"].includes(next)),
             automation,
             state,
             selected,
@@ -292,7 +300,7 @@ export function useApplicationCard(application, currentTime) {
             cities,
             timelineEvents,
         };
-    }, [application, currentTime]);
+    }, [application, currentTime, canCheckout, metadata]);
 
     // Mutations
     const invalidateAll = () => {
@@ -305,6 +313,7 @@ export function useApplicationCard(application, currentTime) {
         onSuccess: invalidateAll,
     });
 
+    const paymentReconcile = useMutation({ mutationFn: () => reconcilePayment(application._id), onSuccess: invalidateAll });
     const acknowledgeUnpaid = useMutation({ mutationFn: () => acknowledgeUnpaidCheckout(application._id), onSuccess: invalidateAll });
 
     const eligibilityCheck = useMutation({
@@ -387,6 +396,7 @@ export function useApplicationCard(application, currentTime) {
     const mutations = useMemo(() => ({
         paymentSession,
         acknowledgeUnpaid,
+        paymentReconcile,
         eligibilityCheck,
         searchRestart,
         appCancel,
@@ -397,7 +407,7 @@ export function useApplicationCard(application, currentTime) {
         pauseBot,
         resumeBot,
     }), [
-        paymentSession, acknowledgeUnpaid, eligibilityCheck, searchRestart, appCancel,
+        paymentSession, acknowledgeUnpaid, paymentReconcile, eligibilityCheck, searchRestart, appCancel,
         appDelete, manualConfirm, forceTransition, payStatus, pauseBot, resumeBot
     ]);
 

@@ -3,7 +3,9 @@ import { STATE_LABELS } from "../../lib/constants";
 import { LoaderCircle } from "lucide-react";
 
 export const ApplicationForms = React.memo(({ 
-    application, 
+    application,
+    allowedTransitions = [],
+    locked = false,
     state,
     showConfirmForm,
     adminOptionsOpen,
@@ -22,7 +24,7 @@ export const ApplicationForms = React.memo(({
             <div className={`grid-expand ${showConfirmForm && ["manual_payment_required", "manual_review", "searching", "reschedule_searching"].includes(state) ? "open" : ""}`}>
                 <div className="grid-expand-inner">
                     <section className="mt-4 p-6 rounded-2xl bg-orange/5 border border-orange/20 flex flex-col gap-5">
-                        <strong className="text-sm text-orange-dark">تأكيد الحجز يدويًا</strong>
+                        <strong className="text-sm text-orange-dark">التحقق من الحجز لدى Prometric</strong>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <label className="flex flex-col gap-1.5 text-xs font-bold text-gray-700">
                                 رقم التأكيد *
@@ -90,12 +92,12 @@ export const ApplicationForms = React.memo(({
                                     className="px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-xs text-ink outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all"
                                 >
                                     <option value="">-- اختر الحالة --</option>
-                                    {Object.entries(STATE_LABELS).map(([k, v]) => (
+                                    {Object.entries(STATE_LABELS).filter(([key]) => allowedTransitions.includes(key)).map(([k, v]) => (
                                         <option key={k} value={k}>{v} ({k})</option>
                                     ))}
                                 </select>
                                 <button 
-                                    disabled={forceTransition.isPending || !selectedTransitionState || selectedTransitionState === state}
+                                    disabled={locked || forceTransition.isPending || !selectedTransitionState || selectedTransitionState === state}
                                     onClick={() => setConfirmDialog({ isOpen: true, title: "تغيير إجباري", message: `هل أنت متأكد من تغيير الحالة إجبارياً إلى ${STATE_LABELS[selectedTransitionState] || selectedTransitionState}؟`, type: "danger", action: () => forceTransition.mutate(selectedTransitionState) })}
                                     className="px-5 py-2.5 rounded-xl text-xs font-bold bg-cyan-600 text-white hover:bg-cyan-700 hover-scale disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none transition-all"
                                 >

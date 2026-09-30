@@ -19,6 +19,8 @@ export const ApplicationActions = React.memo(({
     state,
     locked,
     paymentReview,
+    reconciliationStatus,
+    paymentReconcile,
     acknowledgeUnpaid,
     showConfirmForm,
     setShowConfirmForm,
@@ -65,16 +67,19 @@ export const ApplicationActions = React.memo(({
 
             {!locked && confirmStates.includes(state) && (
                 <button onClick={() => setShowConfirmForm((v) => !v)} className={`${actionBtn} ${showConfirmForm ? "bg-orange/10 text-orange-dark" : "bg-gray-50 text-gray-700 hover:bg-gray-100"}`}>
-                    <ClipboardEdit size={16} /> {showConfirmForm ? "إغلاق النموذج" : "تسجيل رقم تأكيد برومترك"}
+                    <ClipboardEdit size={16} /> {showConfirmForm ? "إغلاق النموذج" : "التحقق من رقم تأكيد برومترك"}
                 </button>
             )}
 
             {paymentReview && !locked && ["manual_review", "manual_payment_required"].includes(state) && (
+                <button disabled={paymentReconcile.isPending} onClick={() => paymentReconcile.mutate()} className={actionBtn}>فحص نتيجة الدفع</button>
+            )}
+            {paymentReview && reconciliationStatus === "failed" && !locked && ["manual_review", "manual_payment_required"].includes(state) && (
                 <button disabled={acknowledgeUnpaid.isPending} onClick={() => setConfirmDialog({
                     isOpen: true, title: "مراجعة نتيجة العملية", type: "warning",
-                    message: "هل تحققت من برومترك وتأكدت أن محاولة الحجز أو إعادة الجدولة لم تنجح وأن الرسوم لم تُدفع؟ وجود مبلغ محجوز أو غياب البريد لا يثبت فشل العملية. إذا نجحت العملية، أدخل رقم التأكيد بدل إعادة المحاولة.",
+                    message: "سيعيد الخادم فحص نتيجة الدفع لدى Prometric. لن يسمح بالمحاولة الجديدة إلا إذا أكد المزود فشل الدفع، مع الاحتفاظ بسجل المحاولة السابقة.",
                     action: () => acknowledgeUnpaid.mutate(),
-                })} className={`${actionBtn} bg-amber-50 text-amber-800`}>تحققت: العملية لم تتم</button>
+                })} className={`${actionBtn} bg-amber-50 text-amber-800`}>إعادة المحاولة بعد تحقق الفشل</button>
             )}
             <button onClick={() => setAdminOptionsOpen((v) => !v)} className={`${actionBtn} ${adminOptionsOpen ? "bg-cyan-50 text-cyan-700" : "bg-gray-50 text-gray-700 hover:bg-gray-100"}`}>
                 <Settings size={16} /> خيارات متقدمة
@@ -86,7 +91,7 @@ export const ApplicationActions = React.memo(({
                 </button>
             )}
             
-            <button disabled={appDelete.isPending || locked || paymentReview || ["searching", "reschedule_searching", "awaiting_admin_slot_lookup", "fetching_slots", "awaiting_admin_slot_selection", "slot_selected", "booking", "validating_eligibility"].includes(state)} onClick={() => setConfirmDialog({ isOpen: true, title: "حذف نهائي", message: "هل أنت متأكد من حذف الطلب بجميع بياناته؟ لا يمكن التراجع عن هذا الإجراء وسوف يختفي من اللوحة.", type: "danger", action: () => appDelete.mutate() })} className={`${actionBtn} bg-red-600 text-white hover:bg-red-700 ${["cancelled", "confirmed", "rescheduled"].includes(state) ? "mr-auto" : ""}`}>
+            <button disabled={appDelete.isPending || locked || paymentReview || ["searching", "reschedule_searching", "awaiting_admin_slot_lookup", "fetching_slots", "awaiting_admin_slot_selection", "slot_selected", "booking", "validating_eligibility", "manual_review", "manual_payment_required", "confirmed", "rescheduled"].includes(state)} onClick={() => setConfirmDialog({ isOpen: true, title: "حذف نهائي", message: "هل أنت متأكد من حذف الطلب بجميع بياناته؟ لا يمكن التراجع عن هذا الإجراء وسوف يختفي من اللوحة.", type: "danger", action: () => appDelete.mutate() })} className={`${actionBtn} bg-red-600 text-white hover:bg-red-700 ${["cancelled", "confirmed", "rescheduled"].includes(state) ? "mr-auto" : ""}`}>
                 {appDelete.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <Trash2 size={16} />} حذف نهائي
             </button>
         </section>

@@ -88,3 +88,12 @@ export const acknowledgeUnpaidCheckout = async (id) => {
     const { data } = await api.post(`api/v1/booking-workflow/${id}/acknowledge-unpaid`, { verifiedUnpaid: true });
     return data;
 };
+
+export const getWorkflowMetadata = async () => {
+    const { data } = await api.get("api/v1/booking-workflow/metadata");
+    return data.data;
+};
+export const reconcilePayment = async (id) => {
+    const { data } = await api.post(`api/v1/booking-workflow/${id}/reconcile-payment`, {});
+    return data;
+};

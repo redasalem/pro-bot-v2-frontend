@@ -39,7 +39,9 @@ export default function Applicationcard({ application, currentTime }) {
 
             <ApplicationActions
                     locked={Boolean(application.automation?.activeJobId)}
-                    paymentReview={Boolean(["JOB_TIMEOUT_EXCEEDED", "BOOKING_LOCK_LOST", "PROMETRIC_RESCHEDULE_COMMIT_FAILED"].includes(application.automation?.lastError?.code) || application.automation?.paymentAttemptStartedAt || application.automation?.paymentOrchestratorId || application.automation?.prometricCheckoutUrl || application.automation?.paymentIntentId || application.prometricPayment?.status === "paid")}
+                    paymentReview={data.paymentReview}
+                    reconciliationStatus={data.automation.paymentReconciliation?.status}
+                    paymentReconcile={mutations.paymentReconcile}
                     acknowledgeUnpaid={mutations.acknowledgeUnpaid}
                 state={data.state}
                 showConfirmForm={uiState.showConfirmForm}
@@ -57,6 +59,8 @@ export default function Applicationcard({ application, currentTime }) {
             />
 
             <ApplicationForms
+                allowedTransitions={data.allowedTransitions}
+                locked={Boolean(data.automation.activeJobId) || data.paymentReview}
                 application={application}
                 state={data.state}
                 showConfirmForm={uiState.showConfirmForm}

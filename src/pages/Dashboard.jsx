@@ -206,6 +206,9 @@ export default function Dashboard() {
           if (update) {
             const newAutomation = { ...(app.automation || {}), ...(update.automation || {}) };
             const isDifferent = 
+                app.updatedAt !== update.updatedAt ||
+                app.automation?.activeJobId !== update.automation?.activeJobId ||
+                JSON.stringify(app.prometricPayment) !== JSON.stringify(update.prometricPayment) ||
                 app.automation?.state !== update.automation?.state ||
                 app.automation?.nextAttemptAt !== update.automation?.nextAttemptAt ||
                 app.paymentStatus !== update.paymentStatus ||
