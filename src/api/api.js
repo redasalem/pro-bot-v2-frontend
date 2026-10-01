@@ -1,6 +1,6 @@
 import axios from "axios";
 import * as Sentry from "@sentry/react";
-import { clearToken } from "../lib/auth";
+import { clearToken, getToken } from "../lib/auth";
 import { API_ERROR_MESSAGES } from "../lib/constants";
 
 const api = axios.create({
@@ -9,8 +9,17 @@ const api = axios.create({
   timeout: 20000, // 20s — covers Render cold-start spin-up
 });
 
-// Authorization is handled securely via HttpOnly cookies by default
-// withCredentials is set to true on the instance.
+// ── P0-2: Bearer token fallback for Safari / non-CHIPS browsers ──────
+// HttpOnly cookies are the primary auth transport (withCredentials: true).
+// When the browser silently drops the cross-site cookie, the fallback
+// token stored by the login flow is injected via Authorization header.
+api.interceptors.request.use((config) => {
+  const token = getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 // ── Retry interceptor (cold-start resilience) ─────────────────────────
 // Automatically retries once after a 3 s delay on network errors or
